@@ -1,0 +1,56 @@
+/* <x-grid>: port of Yii's CGridView */
+
+.grid-view {
+    position: relative;
+    transition: opacity 0.15s;
+}
+
+.grid-view.grid-view-loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.grid-view thead th {
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.grid-view .sort-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.grid-view .sort-link::after {
+    content: '\f0dc';
+    font: var(--fa-font-solid);
+    margin-left: 0.35rem;
+    opacity: 0.35;
+}
+
+.grid-view .sort-link.asc::after {
+    content: '\f0de';
+    opacity: 1;
+}
+
+.grid-view .sort-link.desc::after {
+    content: '\f0dd';
+    opacity: 1;
+}
+
+.grid-view .filters td {
+    padding: 0.35rem;
+}
+
+.grid-view .button-column {
+    width: 1%;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.grid-view .grid-pager {
+    padding: 0.75rem;
+}
+
+.grid-view .grid-pager .pagination {
+    margin: 0;
+}

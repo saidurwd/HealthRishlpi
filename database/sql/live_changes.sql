@@ -1,0 +1,27 @@
+-- =============================================================================
+-- HealthRishlpi — database changes required by the Laravel port
+-- =============================================================================
+--
+-- The Laravel app runs on the existing Yii schema (tables prefixed `os_`).
+-- Every schema change the Laravel app needs is recorded here, in order, so the
+-- live database can be brought up to date before the Laravel app goes live.
+--
+-- Rules for this file:
+--   * Append new changes at the bottom as a new numbered section. Never edit
+--     or reorder a section that has already been applied to live.
+--   * Every statement must be safe to run more than once
+--     (CREATE TABLE IF NOT EXISTS, ADD COLUMN IF NOT EXISTS, ...).
+--   * Changes must stay backward compatible with the Yii app until cutover:
+--     add tables/columns, never drop or rename existing ones.
+--
+-- Apply (select the target database first; the file does not name one):
+--   mysql -u <user> -p <database> < database/sql/live_changes.sql
+--
+-- Target server: MariaDB 11.4 (live), MariaDB 12.1 (local).
+-- =============================================================================
+
+
+-- No changes yet: the Laravel app runs on the unchanged Yii schema.
+-- (Sessions are stored in files and "remember me" uses a derived token, so
+-- neither an `os_sessions` table nor an `os_user.remember_token` column is
+-- needed.)
