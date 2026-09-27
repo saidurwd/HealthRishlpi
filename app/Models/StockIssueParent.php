@@ -17,8 +17,11 @@ use Illuminate\Support\Facades\DB;
  * @property string $issue_date
  * @property string $issue_number "SI#ADMIN-2026-1"
  * @property int $issue_by
- * @property string|null $total_amount
+ * @property string|float|null $total_amount
  * @property int $status
+ * @property string|null $comments
+ * @property string|null $created_on
+ * @property int|null $created_by
  */
 #[Table('stock_issue_parent', timestamps: false)]
 #[Fillable(['comments', 'status'])]
@@ -86,7 +89,7 @@ class StockIssueParent extends LegacyModel
      */
     public static function totalAmount(int $id): mixed
     {
-        return DB::table('stock_issue')->where('parent', $id)->value(DB::raw('ROUND((SUM(amount)),6)'));
+        return DB::table('stock_issue')->where('parent', $id)->rawValue('ROUND((SUM(amount)),6)');
     }
 
     public static function nextNumber(string $loginName): string

@@ -2,72 +2,81 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Acl;
-use App\Models\AclAction;
-use App\Models\AclController;
-use App\Models\UserGroup;
+use App\Models\Role;
 use App\Support\Grid;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Spatie\Permission\Models\Permission;
 
-class UserGroupController extends CrudController
+/**
+ * User groups (roles) and their access matrix: one switch per permission,
+ * listed under the permission's section.
+ */
+class UserGroupController extends Controller
 {
-    protected string $model = UserGroup::class;
+    private const PAGE = ['route' => 'userGroup', 'plural' => 'User Groups', 'singular' => 'Group'];
 
-    protected string $route = 'userGroup';
-
-    protected string $plural = 'User Groups';
-
-    protected string $singular = 'Group';
-
-    protected string $savedMessage = 'Group was saved successfully';
-
-    protected function grid(): Grid
+    public function admin(): View
     {
-        return Grid::for(UserGroup::query())
+        $grid = Grid::for(Role::query())
             ->compare('id')
-            ->compare('title', partial: true)
-            ->compare('details', partial: true);
+            ->compare('name', partial: true)
+            ->compare('details', partial: true)
+            ->paginate(config('legacy.pageSize'));
+
+        return view('user-group.admin', ['grid' => $grid, 'page' => self::PAGE]);
     }
 
-    /**
-     * The access matrix. Opening it first makes sure the group has an
-     * `os_acl` row (access off) for every `os_acl_action`, and refreshes the
-     * titles of existing rows.
-     */
-    public function access(int $id): View
+    public function create(Request $request): View|RedirectResponse
     {
-        $group = $this->find($id);
+        return $this->save($request, new Role, 'create');
+    }
 
-        foreach (AclAction::query()->with('controller0')->get() as $action) {
-            $controller = $action->controller0?->controller;
-            $existing = Acl::query()->where('group_id', $group->id)->where('controller', $controller)->where('actions', $action->action);
+    public function update(Request $request, int $id): View|RedirectResponse
+    {
+        return $this->save($request, $this->find($id), 'update');
+    }
 
-            if ($existing->exists()) {
-                $existing->update(['action_title' => $action->title]);
-            } else {
-                Acl::create(['group_id' => $group->id, 'controller' => $controller, 'actions' => $action->action, 'action_title' => $action->title, 'access' => 0]);
-            }
+    public function delete(Request $request, int $id): RedirectResponse|Response
+    {
+        try {
+            $this->find($id)->delete();
+        } catch (QueryException $e) {
+            return $this->deleteFailed($e);
         }
 
+        if ($request->has('ajax')) {
+            return response()->noContent();
+        }
+
+        return redirect($request->input('returnUrl', route('userGroup.admin')));
+    }
+
+    public function access(int $id): View
+    {
+        $role = $this->find($id);
+
         return view('user-group.access', [
-            'group' => $group,
-            'controllers' => AclController::query()->where('status', 1)->orderBy('title')->get(),
-            'acl' => Acl::query()->where('group_id', $group->id)->orderBy('controller')->orderBy('actions')->get()->groupBy('controller'),
+            'group' => $role,
+            'sections' => Permission::query()->orderBy('group')->orderBy('id')->get()->groupBy('group'),
+            'granted' => $role->permissions()->pluck('id')->flip(),
         ]);
     }
 
-    public function turnon(int $id): Response
+    public function turnon(Request $request, int $id): Response
     {
-        Acl::query()->whereKey($id)->update(['access' => 1]);
+        $this->find($id)->givePermissionTo($this->permission($request));
 
         return response('ok');
     }
 
-    public function turnoff(int $id): Response
+    public function turnoff(Request $request, int $id): Response
     {
-        Acl::query()->whereKey($id)->update(['access' => 0]);
+        $this->find($id)->revokePermissionTo($this->permission($request));
 
         return response('ok');
     }
@@ -77,21 +86,50 @@ class UserGroupController extends CrudController
      */
     public function accessall(Request $request): Response
     {
-        Acl::query()->where('group_id', (int) $request->input('group_id'))
-            ->update(['access' => (int) $request->input('id') === 2 ? 1 : 0]);
+        $role = $this->find((int) $request->input('group_id'));
+        $role->syncPermissions((int) $request->input('id') === 2 ? Permission::all() : []);
 
         return response('ok');
     }
 
     /**
-     * "Access all" (id 2) or "Deny all" for one controller of a group.
+     * "Access all" (id 2) or "Deny all" for one section of a group.
      */
     public function accessallc(Request $request): Response
     {
-        Acl::query()->where('group_id', (int) $request->input('group_id'))
-            ->where('controller', (string) $request->input('cntrl'))
-            ->update(['access' => (int) $request->input('id') === 2 ? 1 : 0]);
+        $role = $this->find((int) $request->input('group_id'));
+        $permissions = Permission::query()->where('group', (string) $request->input('section'))->get();
 
-        return response($request->input('id').', '.$request->input('group_id').', '.$request->input('cntrl'));
+        if ((int) $request->input('id') === 2) {
+            $role->givePermissionTo($permissions);
+        } else {
+            $role->revokePermissionTo($permissions);
+        }
+
+        return response('ok');
+    }
+
+    private function save(Request $request, Role $role, string $action): View|RedirectResponse
+    {
+        if ($request->isMethod('post')) {
+            $rules = Role::rules($role->exists ? $role : null);
+            $role->fill($request->validate($rules, [], Role::labelsFor(array_keys($rules))))->save();
+
+            return redirect()->route('userGroup.admin')->with('success', 'Group was saved successfully');
+        }
+
+        return view('crud.'.$action, ['record' => $role, 'page' => self::PAGE, 'form' => 'user-group._form']);
+    }
+
+    private function find(int $id): Role
+    {
+        return Role::query()->find($id) ?? abort(404, 'The requested page does not exist.');
+    }
+
+    private function permission(Request $request): string
+    {
+        return $request->validate([
+            'permission' => ['required', 'string', Rule::exists(config('permission.table_names.permissions'), 'name')],
+        ])['permission'];
     }
 }

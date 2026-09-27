@@ -9,6 +9,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * File attached to a goods receive line (`os_purchase_receive_document`);
  * `receive_number` is the line id. Files live in public/uploads/store.
+ *
+ * @property int $id
+ * @property int $receive_number
+ * @property string|null $doc_title
+ * @property string|null $doc_file
+ * @property int|null $created_by
+ * @property string|null $created_on
  */
 #[Table('purchase_receive_document', timestamps: false)]
 #[Fillable(['receive_number', 'doc_title'])]

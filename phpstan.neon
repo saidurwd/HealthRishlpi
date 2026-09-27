@@ -1,0 +1,13 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - routes
+    level: 5
+    exceptions:
+        # Eloquent does not declare the QueryException that save()/delete() throw
+        uncheckedExceptionClasses:
+            - Illuminate\Database\QueryException
+        reportUncheckedExceptionDeadCatch: false

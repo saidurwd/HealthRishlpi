@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 
 /**
  * Country (`os_country`).
+ *
+ * @property int $id
+ * @property string $title
+ * @property string|null $country_2_code
+ * @property string|null $country_3_code
+ * @property string|null $status
  */
 #[Table('country', timestamps: false)]
 #[Fillable(['title', 'country_2_code', 'country_3_code', 'status'])]

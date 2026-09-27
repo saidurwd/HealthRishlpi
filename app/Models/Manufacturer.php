@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 
 /**
  * Manufacturer (`os_manufacturer`).
+ *
+ * @property int $id
+ * @property string $title
+ * @property string|null $email
+ * @property string|null $phone
+ * @property string|null $mobile
+ * @property string|null $address
  */
 #[Table('manufacturer', timestamps: false)]
 #[Fillable(['title', 'email', 'phone', 'mobile', 'address'])]

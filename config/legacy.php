@@ -46,8 +46,4 @@ return [
     'pageSize100' => 100,
     'pageSize500' => 500,
     'pageSize1000' => 1000,
-
-    // ACL decisions are cached per user/controller/action for this many seconds
-    'aclCacheSeconds' => 3600,
-
 ];

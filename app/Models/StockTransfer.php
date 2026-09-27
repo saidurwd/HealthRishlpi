@@ -14,12 +14,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $parent
  * @property int $item
- * @property string $quantity
- * @property string|null $rate
- * @property string|null $total_amount
+ * @property string|float $quantity
+ * @property string|float|null $rate
+ * @property string|float|null $total_amount
  * @property int $store_from
  * @property int $store_to
  * @property int|null $batch
+ * @property int|null $reference
+ * @property int|null $created_by
+ * @property string|null $created_on
  */
 #[Table('stock_transfer', timestamps: false)]
 #[Fillable(['parent', 'item', 'quantity', 'store_from', 'store_to', 'batch'])]

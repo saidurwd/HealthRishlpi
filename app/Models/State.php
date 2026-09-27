@@ -8,6 +8,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * State / division (`os_state`).
+ *
+ * @property int $id
+ * @property int $country
+ * @property string $title
+ * @property string|null $state_2_code
+ * @property string|null $state_3_code
+ * @property string|null $status
  */
 #[Table('state', timestamps: false)]
 #[Fillable(['country', 'title', 'state_2_code', 'state_3_code', 'status'])]

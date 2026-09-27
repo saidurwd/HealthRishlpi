@@ -16,6 +16,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $checksum
  * @property string $type gzip|zip|sql
  * @property string $status success|failed
+ * @property string|null $file_path
+ * @property string|null $duration
+ * @property int $tables_count
+ * @property string $created_on
+ * @property int|null $created_by
  */
 #[Table('backup', timestamps: false)]
 class Backup extends LegacyModel

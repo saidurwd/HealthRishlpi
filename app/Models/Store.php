@@ -8,6 +8,15 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 
 /**
  * Medicine store / pharmacy (`os_store`). Tree: see HasTreePath.
+ *
+ * @property int $id
+ * @property int|null $parent
+ * @property string $title
+ * @property string|null $alias
+ * @property string|null $location
+ * @property int|null $incharge
+ * @property string|null $description
+ * @property string|null $path
  */
 #[Table('store', timestamps: false)]
 #[Fillable(['parent', 'title', 'alias', 'location', 'incharge', 'description', 'path'])]

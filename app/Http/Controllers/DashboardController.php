@@ -249,7 +249,7 @@ class DashboardController extends Controller
 
     private static function revenue(string $start, string $end): mixed
     {
-        return DB::table('invoice_parent')->where('invoice_date', '>=', $start)->where('invoice_date', '<', $end)->value(DB::raw('COALESCE(SUM(total_amount),0)'));
+        return DB::table('invoice_parent')->where('invoice_date', '>=', $start)->where('invoice_date', '<', $end)->rawValue('COALESCE(SUM(total_amount),0)');
     }
 
     private static function prescriptions(string $start, string $end): int
@@ -359,7 +359,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @param  Collection<int, object>  $rows  label + cnt
+     * @param  Collection<int, \stdClass>  $rows  label + cnt
      * @return array{labels: array<int, string>, values: array<int, int|float>}
      */
     private static function chart($rows, string $type): array

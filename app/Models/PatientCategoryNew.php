@@ -8,6 +8,13 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 
 /**
  * Patient category (`os_patient_category_new`). Tree: see HasTreePath.
+ *
+ * @property int $id
+ * @property int|null $parent
+ * @property string $title
+ * @property string|null $alias
+ * @property string|null $path
+ * @property string $status
  */
 #[Table('patient_category_new', timestamps: false)]
 #[Fillable(['parent', 'title', 'alias', 'path', 'status'])]

@@ -15,6 +15,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $patient
  * @property string|null $pre_number "PRE#ADMIN-2026-2456"
  * @property int $diagnosis
+ * @property string|null $cc
+ * @property string|null $oe
+ * @property string|null $bp
+ * @property string|null $pulse
+ * @property string|null $temp
+ * @property string|null $advice
+ * @property string|null $rx
+ * @property string|null $admission
+ * @property string|null $created_on
+ * @property int|null $created_by
  */
 #[Table('patient_prescription', timestamps: false)]
 #[Fillable(['diagnosis', 'cc', 'oe', 'bp', 'pulse', 'temp', 'advice', 'rx', 'admission'])]

@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Attributes\Table;
  * @property string|null $instruction
  * @property int|null $no_of_days
  * @property int $created_by
+ * @property string $servicetype
+ * @property string $created_on
  */
 #[Table('prescription_medicine', timestamps: false)]
 #[Fillable(['parent', 'servicetype', 'product', 'instruction', 'no_of_days'])]

@@ -8,6 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * City (`os_city`).
+ *
+ * @property int $id
+ * @property int $country
+ * @property int $state
+ * @property string $title
+ * @property string|null $city_2_code
+ * @property string|null $city_3_code
+ * @property string|null $status
  */
 #[Table('city', timestamps: false)]
 #[Fillable(['country', 'state', 'title', 'city_2_code', 'city_3_code', 'status'])]

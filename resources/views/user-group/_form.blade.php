@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-md-6">
-        <x-form.input name="title" :label="$record::label('title')" :value="$record->title" maxlength="150" placeholder="Group" required />
+        <x-form.input name="name" :label="$record::label('name')" :value="$record->name" maxlength="150" placeholder="Group" required />
     </div>
 </div>
 <div class="row">

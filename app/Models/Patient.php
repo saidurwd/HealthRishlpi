@@ -23,6 +23,32 @@ use Illuminate\Support\Facades\DB;
  * @property int|null $thana
  * @property int|null $district
  * @property int|null $country
+ * @property string|null $ref_no
+ * @property string|null $sex
+ * @property string|null $blood_groop
+ * @property string|null $marital_status
+ * @property string|null $email
+ * @property string|null $national_id
+ * @property string|null $spouse
+ * @property string|null $occupation
+ * @property string|null $religion
+ * @property string|null $village
+ * @property string|null $post
+ * @property string|null $mobile
+ * @property string|null $emergency_name
+ * @property string|null $emergency_relation
+ * @property string|null $emergency_contact
+ * @property int|null $patient_type
+ * @property int|null $patient_grade
+ * @property string|null $problem
+ * @property string|null $referred
+ * @property string|null $guardian_occupation
+ * @property string|null $no_of_family_member
+ * @property string|null $earning_member
+ * @property string|null $earning_source
+ * @property string|null $admission
+ * @property string|null $created_on
+ * @property int|null $created_by
  */
 #[Table('patient', timestamps: false)]
 #[Fillable([

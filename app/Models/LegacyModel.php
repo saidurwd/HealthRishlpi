@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Model;
  *
  * Relations keep the Yii relation names (country0, unit0, ...) because the
  * foreign key columns already use the plain names (country, unit, ...).
+ *
+ * @property int $id every legacy table has an auto-increment id
  */
 abstract class LegacyModel extends Model
 {

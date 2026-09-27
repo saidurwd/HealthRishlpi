@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
+use App\Models\Role;
 use App\Models\User;
-use App\Models\UserGroup;
 use App\Support\Grid;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -41,7 +41,7 @@ class UserController extends Controller
         return view('user.admin', [
             'grid' => $grid,
             'page' => self::PAGE,
-            'groups' => UserGroup::query()->orderBy('title')->pluck('title', 'id'),
+            'groups' => Role::query()->orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -145,7 +145,7 @@ class UserController extends Controller
             'page' => self::PAGE,
             'form' => 'user._form',
             'multipart' => true,
-            'groups' => UserGroup::query()->pluck('title', 'id'),
+            'groups' => Role::query()->orderBy('id')->pluck('name', 'id'),
             'departments' => Department::query()->pluck('title', 'id'),
         ]);
     }

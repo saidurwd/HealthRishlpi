@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 
 /**
  * Patient Type (`os_patient_type`).
+ *
+ * @property int $id
+ * @property string $title
+ * @property string|null $remarks
+ * @property string $status
  */
 #[Table('patient_type', timestamps: false)]
 #[Fillable(['title', 'remarks', 'status'])]

@@ -8,6 +8,13 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 
 /**
  * Product category (`os_product_category`). Tree: see HasTreePath.
+ *
+ * @property int $id
+ * @property int|null $parent
+ * @property string $title
+ * @property string|null $alias
+ * @property string|null $description
+ * @property string|null $path
  */
 #[Table('product_category', timestamps: false)]
 #[Fillable(['parent', 'title', 'alias', 'description', 'path'])]

@@ -13,6 +13,9 @@ use Illuminate\Http\UploadedFile;
  * @property int $transection_id
  * @property string|null $doc_title
  * @property string|null $doc_file
+ * @property int $id
+ * @property int|null $created_by
+ * @property string|null $created_on
  */
 #[Table('store_document', timestamps: false)]
 class StoreDocument extends LegacyModel
@@ -31,7 +34,7 @@ class StoreDocument extends LegacyModel
             $name = time().'1_'.str_replace(' ', '_', strtolower($file->getClientOriginalName()));
             $file->move(public_path('uploads/store'), $name);
 
-            $document = new static;
+            $document = new self;
             $document->forceFill([
                 'transection_type' => $type,
                 'transection_id' => $transactionId,

@@ -16,13 +16,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $parent
  * @property int|null $reference
  * @property int $item
- * @property string $quantity
- * @property string|null $rate sale rate
- * @property string|null $total_amount sale amount
- * @property string|null $buy_rate
- * @property string|null $buy_amount
+ * @property string|float $quantity
+ * @property string|float|null $rate sale rate
+ * @property string|float|null $total_amount sale amount
+ * @property string|float|null $buy_rate
+ * @property string|float|null $buy_amount
  * @property int|null $store
  * @property int|null $batch
+ * @property int|null $created_by
+ * @property string|null $created_on
  */
 #[Table('purchase_receive', timestamps: false)]
 #[Fillable(['parent', 'item', 'quantity', 'rate', 'buy_rate', 'store'])]

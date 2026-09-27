@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 
 /**
  * Stock batch / lot (`os_batch`).
+ *
+ * @property int $id
+ * @property string $title
+ * @property string|null $manufacturing
+ * @property string|null $expiry
  */
 #[Table('batch', timestamps: false)]
 #[Fillable(['title', 'manufacturing', 'expiry'])]

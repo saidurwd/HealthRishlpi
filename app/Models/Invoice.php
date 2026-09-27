@@ -17,12 +17,15 @@ use Illuminate\Support\Facades\DB;
  * @property string|null $servicetype Medicine|Service
  * @property int|null $service
  * @property int|null $item
- * @property string $quantity
- * @property string|null $rate
- * @property string|null $discount
- * @property string|null $amount
+ * @property string|float $quantity
+ * @property string|float|null $rate
+ * @property string|float|null $discount
+ * @property string|float|null $amount
  * @property int|null $store
  * @property int|null $batch
+ * @property string|null $note
+ * @property int|null $created_by
+ * @property string|null $created_on
  */
 #[Table('invoice', timestamps: false)]
 class Invoice extends LegacyModel
@@ -140,6 +143,6 @@ class Invoice extends LegacyModel
      */
     public static function totalAmount(int $parent): mixed
     {
-        return DB::table('invoice')->where('parent', $parent)->value(DB::raw('ROUND((SUM(amount)),6)'));
+        return DB::table('invoice')->where('parent', $parent)->rawValue('ROUND((SUM(amount)),6)');
     }
 }

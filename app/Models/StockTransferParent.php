@@ -17,6 +17,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $transfer_number "ST/26/00001"
  * @property int $transfer_by
  * @property int $status
+ * @property int $supplier
+ * @property string|null $comments
+ * @property string|null $created_on
+ * @property int|null $created_by
  */
 #[Table('stock_transfer_parent', timestamps: false)]
 #[Fillable(['comments', 'status'])]

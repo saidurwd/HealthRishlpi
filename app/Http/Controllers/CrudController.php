@@ -18,10 +18,12 @@ use Illuminate\View\View;
  *
  * Views live in resources/views/<kebab route>/: admin.blade.php (the grid
  * columns) and _form.blade.php (the fields). Create/update pages are shared.
+ *
+ * @template TModel of LegacyModel
  */
 abstract class CrudController extends Controller
 {
-    /** @var class-string<LegacyModel> */
+    /** @var class-string<TModel> */
     protected string $model;
 
     /** Yii controller id, also the route name prefix ("patientCategoryNew") */
@@ -113,6 +115,8 @@ abstract class CrudController extends Controller
 
     /**
      * A new record carrying the column defaults, as a new Yii model did.
+     *
+     * @return TModel
      */
     protected function newRecord(): LegacyModel
     {
@@ -173,6 +177,9 @@ abstract class CrudController extends Controller
         return $request->validate($rules, [], $this->model::labelsFor(array_keys($rules)));
     }
 
+    /**
+     * @return TModel
+     */
     protected function find(int $id): LegacyModel
     {
         return $this->model::query()->find($id) ?? abort(404, 'The requested page does not exist.');

@@ -5,30 +5,12 @@ namespace App\Support;
 use Illuminate\Http\Request;
 
 /**
- * Maps Laravel routes back to Yii's controller and action ids.
- *
- * Routes are named "<controllerId>.<actionId>" using the exact ids the Yii
- * app used (e.g. "purchaseReceive.adjustmentEdit"), because those ids are
- * what `os_acl` rows and `os_menu` urls refer to.
+ * Old Yii URLs. Routes keep the Yii paths and are named
+ * "<controllerId>.<actionId>" with the exact Yii ids
+ * (e.g. "purchaseReceive.adjustmentEdit"), which are also the permission names.
  */
 class LegacyRoute
 {
-    /**
-     * @return array{0: ?string, 1: ?string}
-     */
-    public static function current(?Request $request = null): array
-    {
-        $name = ($request ?? request())->route()?->getName();
-
-        if ($name === null || ! str_contains($name, '.')) {
-            return [null, null];
-        }
-
-        [$controller, $action] = explode('.', $name, 2);
-
-        return [$controller, $action];
-    }
-
     /**
      * Turn a Yii GET-format URL (index.php?r=controller/action&id=5&...) into
      * this app's path ("/controller/action/5?..."). Returns null when the

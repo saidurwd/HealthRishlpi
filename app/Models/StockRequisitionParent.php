@@ -17,6 +17,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $requisition_number "SR#ADMIN-2026-1"
  * @property int $requisition_by
  * @property int $status
+ * @property string|null $comments
+ * @property string|null $created_on
+ * @property int|null $created_by
  */
 #[Table('stock_requisition_parent', timestamps: false)]
 #[Fillable(['comments', 'status'])]

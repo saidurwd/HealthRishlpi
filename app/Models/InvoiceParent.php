@@ -18,9 +18,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $invoice_date
  * @property string $invoice_number "INV#ADMIN-2026-10340"
  * @property int $invoice_by
- * @property string|null $total_amount
+ * @property string|float|null $total_amount
  * @property int $status
  * @property string|null $payment_status Paid|Unpaid
+ * @property int|null $patient_category_new
+ * @property int|null $patient_category
+ * @property string|null $comments
+ * @property string|null $created_on
+ * @property int|null $created_by
  */
 #[Table('invoice_parent', timestamps: false)]
 #[Fillable(['patient', 'prescription', 'patient_category_new', 'patient_category', 'comments', 'status', 'payment_status'])]

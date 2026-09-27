@@ -14,8 +14,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $parent
  * @property int $item
- * @property string $quantity
+ * @property string|float $quantity
  * @property int|null $converted
+ * @property int|null $reference
+ * @property string|float|null $rate
+ * @property string|float|null $total_amount
+ * @property int|null $project
+ * @property int|null $assignment
+ * @property int|null $created_by
+ * @property string|null $created_on
  */
 #[Table('purchase_order', timestamps: false)]
 #[Fillable(['parent', 'item', 'quantity'])]

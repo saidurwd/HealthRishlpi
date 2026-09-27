@@ -32,7 +32,7 @@
 </div>
 <div class="row">
     <div class="col-md-6">
-        <x-form.select name="status" :label="$record::label('status')" :options="\App\Models\Menu::ACTIVE_STATUSES" :value="$record->status" />
+        <x-form.select name="status" :label="$record::label('status')" :options="\App\Models\User::ACTIVE_STATUSES" :value="$record->status" />
     </div>
 </div>
 <div class="row">

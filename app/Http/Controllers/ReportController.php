@@ -546,11 +546,13 @@ class ReportController extends Controller
     }
 
     /**
-     * @return Collection<int, string>
+     * Patient dropdown options, "Name [PAT#...]".
+     *
+     * @return Collection<int, non-falsy-string>
      */
     private static function patientOptions(): Collection
     {
-        return Patient::query()->orderBy('name')->get(['id', 'name', 'pat_id'])->mapWithKeys(fn ($p) => [$p->id => $p->name.' ['.$p->pat_id.']']);
+        return Patient::query()->orderBy('name')->get(['id', 'name', 'pat_id'])->mapWithKeys(fn (Patient $p) => [$p->id => $p->name.' ['.$p->pat_id.']']);
     }
 
     /**

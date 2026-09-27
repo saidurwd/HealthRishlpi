@@ -7,7 +7,7 @@
         ['name' => 'email'],
         ['name' => 'register_date', 'value' => fn ($row) => \App\Support\YiiFormat::date($row->register_date)],
         ['name' => 'lastvisit', 'value' => fn ($row) => \App\Support\YiiFormat::date($row->lastvisit)],
-        ['name' => 'group_id', 'value' => fn ($row) => $row->group0?->title, 'filter' => $groups],
+        ['name' => 'group_id', 'value' => fn ($row) => $row->group0?->name, 'filter' => $groups],
         ['name' => 'status', 'value' => fn ($row) => $row->status ? 'Active' : 'Inactive', 'filter' => ['0' => 'Inactive', '1' => 'Active']],
         ['header' => 'Actions', 'buttons' => [
             'update',

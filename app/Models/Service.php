@@ -8,6 +8,19 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 
 /**
  * Billable service (consultation, therapy, ...) (`os_service`). Tree: see HasTreePath.
+ *
+ * @property int $id
+ * @property int|null $parent
+ * @property string $title
+ * @property string|null $alias
+ * @property string|null $path
+ * @property string|float $rate
+ * @property string $discount
+ * @property string $rate_status
+ * @property string|null $service_type
+ * @property int|null $service_grade
+ * @property int|null $ordering
+ * @property string $status
  */
 #[Table('service', timestamps: false)]
 #[Fillable(['parent', 'title', 'alias', 'path', 'rate', 'discount', 'service_type', 'rate_status', 'service_grade', 'ordering', 'status'])]

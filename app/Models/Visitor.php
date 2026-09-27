@@ -13,6 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int|null $user_id
  * @property string|null $server_time
+ * @property string|null $user_name
+ * @property string|null $page_title
+ * @property string|null $page_link
+ * @property string|null $browser
+ * @property string|null $visitor_ip
  */
 #[Table('visitor', timestamps: false)]
 class Visitor extends LegacyModel

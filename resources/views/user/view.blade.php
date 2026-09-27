@@ -18,7 +18,7 @@
             $record::label('email') => $record->email,
             $record::label('register_date') => \App\Support\YiiFormat::dateTime($record->register_date),
             $record::label('lastvisit') => \App\Support\YiiFormat::dateTime($record->lastvisit),
-            $record::label('group_id') => $record->group0?->title,
+            $record::label('group_id') => $record->group0?->name,
             $record::label('department') => $record->department0?->title,
             $record::label('status') => $record->status0?->title,
         ]" />

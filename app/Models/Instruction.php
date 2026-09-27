@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 
 /**
  * Instruction (`os_instruction`).
+ *
+ * @property int $id
+ * @property string $title
+ * @property string $status
  */
 #[Table('instruction', timestamps: false)]
 #[Fillable(['title', 'status'])]

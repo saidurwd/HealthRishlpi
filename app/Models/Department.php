@@ -8,6 +8,14 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 
 /**
  * Staff department (`os_department`). Tree: see HasTreePath.
+ *
+ * @property int $id
+ * @property int|null $parent
+ * @property string|null $code
+ * @property string $title
+ * @property string|null $alias
+ * @property string|null $description
+ * @property string|null $path
  */
 #[Table('department', timestamps: false)]
 #[Fillable(['parent', 'code', 'title', 'alias', 'description', 'path'])]

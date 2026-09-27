@@ -1,7 +1,5 @@
 <?php
 
-use App\Http\Controllers\AclActionController;
-use App\Http\Controllers\AclControllerController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BatchController;
@@ -14,7 +12,6 @@ use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\InstructionController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ManufacturerController;
-use App\Http\Controllers\MenuController;
 use App\Http\Controllers\PatientCategoryController;
 use App\Http\Controllers\PatientCategoryNewController;
 use App\Http\Controllers\PatientController;
@@ -48,10 +45,11 @@ use Illuminate\Support\Facades\Route;
 | Routes
 |--------------------------------------------------------------------------
 |
-| URLs keep the Yii app's "/<controllerId>/<actionId>/<id>" shape, because
-| `os_menu.url` stores them in that form. Route names are
-| "<controllerId>.<actionId>" with the exact Yii ids; the `acl` middleware
-| uses them to look up `os_acl`.
+| URLs keep the Yii app's "/<controllerId>/<actionId>/<id>" shape, so old
+| bookmarks still work. Route names are "<controllerId>.<actionId>" with the
+| exact Yii ids; the `route.permission` middleware requires the permission
+| of the same name. A new route there needs its permission added by a
+| migration (tests/Feature/AccessControlTest checks every route has one).
 |
 | Each controller only gets the actions its Yii accessRules() let logged-in
 | users reach. Forms post back to the same URL, as they did in Yii.
@@ -77,7 +75,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/export', [DashboardController::class, 'export'])->name('dashboard.export');
 });
 
-Route::middleware(['auth', 'acl'])->group(function () {
+Route::middleware(['auth', 'route.permission'])->group(function () {
     // Configuration
     Route::crud('country', CountryController::class);
     Route::crud('state', StateController::class);
@@ -92,7 +90,6 @@ Route::middleware(['auth', 'acl'])->group(function () {
     Route::crud('patientType', PatientTypeController::class);
     Route::crud('service', ServiceController::class);
 
-    Route::crud('menu', MenuController::class);
     Route::crud('userStatus', UserStatusController::class);
 
     // Access control
@@ -107,7 +104,7 @@ Route::middleware(['auth', 'acl'])->group(function () {
         Route::post('delete/{id}', 'delete')->name('delete')->whereNumber('id');
     });
 
-    // The access matrix switches were GET links in Yii; they change data, so they are POSTs here
+    // User groups are roles. The access matrix switches were GET links in Yii; they change data, so they are POSTs here
     Route::crud('userGroup', UserGroupController::class);
     Route::controller(UserGroupController::class)->prefix('userGroup')->name('userGroup.')->group(function () {
         Route::get('access/{id}', 'access')->name('access')->whereNumber('id');
@@ -115,17 +112,6 @@ Route::middleware(['auth', 'acl'])->group(function () {
         Route::post('turnoff/{id}', 'turnoff')->name('turnoff')->whereNumber('id');
         Route::post('accessall', 'accessall')->name('accessall');
         Route::post('accessallc', 'accessallc')->name('accessallc');
-    });
-
-    Route::crud('aclController', AclControllerController::class);
-    Route::get('aclController/view/{id}', [AclControllerController::class, 'view'])->name('aclController.view')->whereNumber('id');
-
-    Route::controller(AclActionController::class)->prefix('aclAction')->name('aclAction.')->group(function () {
-        Route::get('actions', 'actions')->name('actions');
-        Route::get('view/{id}', 'view')->name('view')->whereNumber('id');
-        Route::match(['get', 'post'], 'create', 'create')->name('create');
-        Route::match(['get', 'post'], 'update/{id}', 'update')->name('update')->whereNumber('id');
-        Route::post('delete/{id}', 'delete')->name('delete')->whereNumber('id');
     });
 
     // Patients and prescriptions

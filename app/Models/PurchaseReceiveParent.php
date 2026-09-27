@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\DB;
  * @property int $receive_by
  * @property int $supplier
  * @property int $status
+ * @property string|null $comments
+ * @property string|null $created_on
+ * @property int|null $created_by
  */
 #[Table('purchase_receive_parent', timestamps: false)]
 #[Fillable(['supplier', 'comments', 'status'])]

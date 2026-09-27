@@ -13,6 +13,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $category
  * @property string $title
  * @property int $unit
+ * @property string|null $product_code
+ * @property string|null $description
+ * @property string|float|null $threshold_value
+ * @property string|float|null $minimum_storage_limit
+ * @property int|null $created_by
+ * @property string|null $created_on
  */
 #[Table('product', timestamps: false)]
 #[Fillable(['category', 'title', 'product_code', 'description', 'unit', 'threshold_value', 'minimum_storage_limit'])]

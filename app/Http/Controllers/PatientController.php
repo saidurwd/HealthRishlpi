@@ -29,6 +29,8 @@ use Illuminate\View\View;
 
 /**
  * Patient directory, prescriptions and the printable patient forms.
+ *
+ * @extends CrudController<Patient>
  */
 class PatientController extends CrudController
 {

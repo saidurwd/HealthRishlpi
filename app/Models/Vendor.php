@@ -8,6 +8,13 @@ use Illuminate\Support\HtmlString;
 
 /**
  * Supplier (`os_vendor`).
+ *
+ * @property int $id
+ * @property string $title
+ * @property string|null $email
+ * @property string|null $phone
+ * @property string|null $mobile
+ * @property string|null $address
  */
 #[Table('vendor', timestamps: false)]
 #[Fillable(['title', 'email', 'phone', 'mobile', 'address'])]

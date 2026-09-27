@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
-use App\Models\Menu;
-use App\Support\LegacyRoute;
+use App\Models\User;
+use App\Support\Menu;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -23,8 +24,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Super users pass every permission check (the Yii app's group 1 checks)
+        Gate::before(fn (User $user) => $user->isSuper() ? true : null);
+
         View::composer('layouts.app', function ($view) {
-            $view->with('menu', Menu::tree(...LegacyRoute::current()));
+            $view->with('menu', Menu::build(config('menu'), auth()->user(), request()->route()?->getName()));
         });
 
         /*

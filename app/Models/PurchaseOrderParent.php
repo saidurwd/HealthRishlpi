@@ -17,6 +17,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $order_by
  * @property int $supplier
  * @property int $status
+ * @property string|null $comments
+ * @property string|null $created_on
+ * @property int|null $created_by
  */
 #[Table('purchase_order_parent', timestamps: false)]
 #[Fillable(['supplier', 'comments', 'status'])]

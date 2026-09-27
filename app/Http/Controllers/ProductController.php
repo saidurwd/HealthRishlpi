@@ -59,8 +59,7 @@ class ProductController extends CrudController
     protected function saving(LegacyModel $record, Request $request): void
     {
         if (! $record->exists) {
-            $record->created_by = $request->user()->id;
-            $record->created_on = now()->format('Y-m-d G:i:s');
+            $record->forceFill(['created_by' => $request->user()->id, 'created_on' => now()->format('Y-m-d G:i:s')]);
         }
     }
 

@@ -8,6 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Thana (sub-district) (`os_thana`).
+ *
+ * @property int $id
+ * @property int $country
+ * @property int $state
+ * @property int $city
+ * @property int $district
+ * @property string $title
+ * @property string $status
  */
 #[Table('thana', timestamps: false)]
 #[Fillable(['country', 'state', 'city', 'district', 'title', 'status'])]

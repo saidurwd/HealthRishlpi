@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Validation\Rule;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * Application user (`os_user`).
@@ -21,6 +22,9 @@ use Illuminate\Validation\Rule;
  * `os_user` has no remember_token column, so the "remember me" token is
  * derived instead of stored (see getRememberToken()).
  *
+ * `group_id` is the user's group; its role (same id) is kept in step on
+ * every save, so permission checks ($user->can('patient.admin')) follow it.
+ *
  * @property int $id
  * @property string $full_name
  * @property string $username
@@ -30,13 +34,17 @@ use Illuminate\Validation\Rule;
  * @property int|null $department
  * @property int|null $status
  * @property string|null $photo
+ * @property string|null $register_date
+ * @property string|null $lastvisit
+ * @property string|null $activation
+ * @property string|null $picture
  */
 #[Table('user', timestamps: false)]
 #[Fillable(['full_name', 'username', 'email', 'password', 'register_date', 'lastvisit', 'activation', 'group_id', 'department', 'status', 'photo'])]
 #[Hidden(['password'])]
 class User extends Authenticatable
 {
-    use HasAttributeLabels, TypecastsLikeYii;
+    use HasAttributeLabels, HasRoles, TypecastsLikeYii;
 
     // Values of os_user.status that block login (UserIdentity::ERROR_STATUS_*)
     public const STATUS_NOT_ACTIVE = 2;
@@ -45,8 +53,20 @@ class User extends Authenticatable
 
     public const STATUS_EXPIRED = 4;
 
-    // Group 1 is the super user group (the Yii app's `User::get_reference_id() == 1` checks)
+    // Options of the tinyint `status` column on the user form
+    public const ACTIVE_STATUSES = ['0' => 'Inactive', '1' => 'Active'];
+
+    // Group 1 is the super user group (the Yii app's `User::get_reference_id() == 1` checks); it passes every permission check
     public const SUPER_GROUP = 1;
+
+    protected static function booted(): void
+    {
+        static::saved(function (self $user) {
+            if ($user->wasRecentlyCreated || $user->wasChanged('group_id')) {
+                $user->syncRoles(Role::query()->whereKey($user->group_id)->get());
+            }
+        });
+    }
 
     public static function attributeLabels(): array
     {
@@ -87,10 +107,10 @@ class User extends Authenticatable
         ]);
     }
 
-    /** @return BelongsTo<UserGroup, $this> */
+    /** @return BelongsTo<Role, $this> */
     public function group0(): BelongsTo
     {
-        return $this->belongsTo(UserGroup::class, 'group_id');
+        return $this->belongsTo(Role::class, 'group_id');
     }
 
     /** @return BelongsTo<Department, $this> */

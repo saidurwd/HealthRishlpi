@@ -12,9 +12,10 @@ use Illuminate\Database\Eloquent\Attributes\Table;
  * @property int $store
  * @property int $item
  * @property int $batch
- * @property string $quantity
- * @property string|null $rate
- * @property string|null $amount
+ * @property string|float $quantity
+ * @property string|float|null $rate
+ * @property string|float|null $amount
+ * @property int $id
  */
 #[Table('stock_summary', timestamps: false)]
 #[Fillable(['store', 'item', 'batch', 'quantity', 'rate', 'amount'])]
@@ -53,7 +54,7 @@ class StockSummary extends LegacyModel
         $row = static::query()->where('store', (int) $store)->where('batch', (int) $batch)->where('item', (int) $item)->first();
 
         if ($row === null) {
-            $row = new static(['store' => (int) $store, 'item' => (int) $item, 'batch' => (int) $batch]);
+            $row = new self(['store' => (int) $store, 'item' => (int) $item, 'batch' => (int) $batch]);
             $row->quantity = $createWith ?? $change;
         } else {
             $row->quantity = (float) $row->quantity + $change;

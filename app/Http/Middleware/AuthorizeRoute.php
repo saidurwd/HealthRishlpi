@@ -2,25 +2,23 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Acl;
-use App\Support\LegacyRoute;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Port of the `beforeAction()` ACL check every Yii controller ran: look up
- * the user's group in `os_acl` for this controller/action and send them to
- * the "no access" page when access is 0.
+ * Every route in the `route.permission` group needs the permission named
+ * like the route ("patient.admin", the Yii controller.action ids). Users
+ * without it go to the "no access" page, as they did under the Yii ACL.
  */
-class CheckAcl
+class AuthorizeRoute
 {
     public function handle(Request $request, Closure $next): Response
     {
-        [$controller, $action] = LegacyRoute::current($request);
+        $name = $request->route()?->getName();
         $user = $request->user();
 
-        if ($user !== null && $controller !== null && ! Acl::allows($user, $controller, $action)) {
+        if ($user !== null && $name !== null && ! $user->can($name)) {
             return redirect()->route('site.noaccess')
                 ->with('error', 'You are not authorized to perform this action!');
         }

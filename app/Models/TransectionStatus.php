@@ -13,6 +13,8 @@ use Illuminate\Support\HtmlString;
  * @property int $status_id
  * @property string $status_title
  * @property int $transection_type
+ * @property int $id
+ * @property int|null $user_view
  */
 #[Table('transection_status', timestamps: false)]
 class TransectionStatus extends LegacyModel

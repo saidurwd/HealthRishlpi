@@ -48,7 +48,7 @@ class Grid
     }
 
     /**
-     * @param  Builder<Model>  $query
+     * @param  Builder<covariant Model>  $query
      */
     public static function for(Builder $query, ?string $prefix = null, ?Request $request = null): self
     {

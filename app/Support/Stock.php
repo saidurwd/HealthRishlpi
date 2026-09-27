@@ -167,14 +167,14 @@ class Stock
             ->where('pr.item', (int) $item);
 
         // Aliases are prefixed too ("purchase_receive as pr" is `os_pr`), so wrap them for raw SQL
-        $average = DB::raw('ROUND((SUM('.DB::getQueryGrammar()->wrap("pr.$amountColumn").')/SUM('.DB::getQueryGrammar()->wrap('pr.quantity').')),6)');
+        $average = 'ROUND((SUM('.DB::getQueryGrammar()->wrap("pr.$amountColumn").')/SUM('.DB::getQueryGrammar()->wrap('pr.quantity').')),6)';
 
         return match (config('legacy.RATEMETHODE')) {
             'ACTUAL' => $query->where('pr.store', (int) $store)->where('pr.batch', (int) $batch)
-                ->value($average),
+                ->rawValue($average),
             'LIFO' => $query->orderByDesc('pr.id')->value("pr.$rateColumn") ?? false,
             'FIFO' => $query->orderBy('pr.id')->value("pr.$rateColumn") ?? false,
-            'AVERAGE' => $query->value($average),
+            'AVERAGE' => $query->rawValue($average),
             default => null,
         };
     }

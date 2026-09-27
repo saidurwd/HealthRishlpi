@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\CheckAcl;
+use App\Http\Middleware\AuthorizeRoute;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['acl' => CheckAcl::class]);
+        $middleware->alias(['route.permission' => AuthorizeRoute::class]);
 
         // The Yii app saved form input untouched: '' stayed '' (MySQL, in
         // non-strict mode, stores it as 0 in numeric columns) and nothing was

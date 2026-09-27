@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Menu;
 use App\Models\Unit;
 use Tests\TestCase;
 
@@ -98,17 +97,5 @@ class UnitTest extends TestCase
         $this->assertDatabaseMissing('unit', ['id' => $first->id]);
         $this->assertDatabaseMissing('unit', ['id' => $second->id]);
         $this->get("/unit/delete/{$first->id}")->assertStatus(405);
-    }
-
-    public function test_sidebar_menu_marks_current_page(): void
-    {
-        $catalog = Menu::create(['parent' => 0, 'title' => 'Catalog', 'controller' => '#', 'url' => '#', 'icon' => 'fa fa-lg fa-fw fa-anchor', 'ordering' => 1, 'status' => 1]);
-        Menu::create(['parent' => $catalog->id, 'title' => 'Unit', 'controller' => 'unit', 'url' => '/unit/admin', 'ordering' => 1, 'status' => 1]);
-        Menu::create(['parent' => 0, 'title' => 'Hidden', 'controller' => 'x', 'url' => '/x/admin', 'ordering' => 2, 'status' => 0]);
-
-        $this->get('/unit/admin')
-            ->assertSee('nav-item menu-open', false)
-            ->assertSee('href="'.url('/unit/admin').'" class="nav-link active"', false)
-            ->assertDontSee('Hidden');
     }
 }
