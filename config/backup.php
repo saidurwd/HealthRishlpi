@@ -95,7 +95,7 @@ return [
 
         'mail' => [
             // Must be a valid address even while mail is off (no BACKUP_NOTIFY_MAIL)
-            'to' => env('BACKUP_NOTIFY_MAIL', 'backups@example.com'),
+            'to' => env('BACKUP_NOTIFY_MAIL') ?: 'backups@example.com',
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
                 'name' => env('MAIL_FROM_NAME', 'Example'),
