@@ -30,6 +30,7 @@ return [
             ['text' => 'Department', 'route' => 'department.admin', 'can' => 'department.admin'],
             ['text' => 'User', 'route' => 'user.admin', 'can' => 'user.admin'],
             ['text' => 'Audit Trail', 'route' => 'auditTrail.admin', 'can' => 'auditTrail.admin'],
+            ['text' => 'Activity Log', 'route' => 'activityLog.admin', 'can' => 'activityLog.admin'],
             ['text' => 'Visitor Statistics', 'route' => 'visitor.admin', 'can' => 'visitor.admin'],
         ],
     ],

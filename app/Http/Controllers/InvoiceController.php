@@ -263,7 +263,8 @@ class InvoiceController extends Controller
      */
     public function remove(Request $request, int $id): RedirectResponse|Response
     {
-        InvoiceParent::query()->whereKey($id)->update(['status' => 2]);
+        // A model save, so the change reaches the activity log
+        InvoiceParent::query()->find($id)?->forceFill(['status' => 2])->save();
 
         if ($request->has('ajax')) {
             return response()->noContent();

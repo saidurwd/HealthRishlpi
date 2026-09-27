@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Validation\Rule;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -47,7 +49,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasAttributeLabels, HasFactory, HasRoles, TypecastsLikeYii;
+    use HasAttributeLabels, HasFactory, HasRoles, LogsActivity, TypecastsLikeYii;
 
     // Values of os_user.status that block login (UserIdentity::ERROR_STATUS_*)
     public const STATUS_NOT_ACTIVE = 2;
@@ -69,6 +71,12 @@ class User extends Authenticatable
                 $user->syncRoleWithGroup();
             }
         });
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        // Password changes are logged by UserController::edit() without the hash
+        return LogOptions::defaults()->useLogName('data')->logAll()->logExcept(['password', 'activation', 'lastvisit'])->logOnlyDirty()->dontLogEmptyChanges();
     }
 
     /**

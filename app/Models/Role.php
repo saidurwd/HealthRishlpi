@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\HasAttributeLabels;
 use Illuminate\Validation\Rule;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Models\Role as SpatieRole;
 
 /**
@@ -16,7 +18,12 @@ use Spatie\Permission\Models\Role as SpatieRole;
  */
 class Role extends SpatieRole
 {
-    use HasAttributeLabels;
+    use HasAttributeLabels, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()->useLogName('access')->logOnly(['name', 'details'])->logOnlyDirty()->dontLogEmptyChanges();
+    }
 
     public static function attributeLabels(): array
     {

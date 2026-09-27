@@ -22,6 +22,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Table('visitor', timestamps: false)]
 class Visitor extends LegacyModel
 {
+    // Page statistics are a log already
+    protected static $recordEvents = [];
+
     public static function attributeLabels(): array
     {
         return [

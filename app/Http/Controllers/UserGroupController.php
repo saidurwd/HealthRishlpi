@@ -69,14 +69,18 @@ class UserGroupController extends Controller
 
     public function turnon(Request $request, int $id): Response
     {
-        $this->find($id)->givePermissionTo($this->permission($request));
+        $role = $this->find($id);
+        $role->givePermissionTo($permission = $this->permission($request));
+        self::logAccess($role, 'granted', [$permission]);
 
         return response('ok');
     }
 
     public function turnoff(Request $request, int $id): Response
     {
-        $this->find($id)->revokePermissionTo($this->permission($request));
+        $role = $this->find($id);
+        $role->revokePermissionTo($permission = $this->permission($request));
+        self::logAccess($role, 'revoked', [$permission]);
 
         return response('ok');
     }
@@ -87,7 +91,9 @@ class UserGroupController extends Controller
     public function accessall(Request $request): Response
     {
         $role = $this->find((int) $request->input('group_id'));
-        $role->syncPermissions((int) $request->input('id') === 2 ? Permission::all() : []);
+        $grant = (int) $request->input('id') === 2;
+        $role->syncPermissions($grant ? Permission::all() : []);
+        self::logAccess($role, $grant ? 'granted' : 'revoked', ['all']);
 
         return response('ok');
     }
@@ -102,11 +108,23 @@ class UserGroupController extends Controller
 
         if ((int) $request->input('id') === 2) {
             $role->givePermissionTo($permissions);
+            self::logAccess($role, 'granted', $permissions->pluck('name')->all());
         } else {
             $role->revokePermissionTo($permissions);
+            self::logAccess($role, 'revoked', $permissions->pluck('name')->all());
         }
 
         return response('ok');
+    }
+
+    /**
+     * @param  array<int, string>  $permissions
+     */
+    private static function logAccess(Role $role, string $change, array $permissions): void
+    {
+        activity('access')->performedOn($role)->event('updated')
+            ->withProperties(['permissions' => $permissions])
+            ->log("permissions $change");
     }
 
     private function save(Request $request, Role $role, string $action): View|RedirectResponse

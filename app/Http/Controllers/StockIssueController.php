@@ -252,7 +252,8 @@ class StockIssueController extends Controller
 
     public function remove(Request $request, int $id): RedirectResponse|Response
     {
-        StockIssueParent::query()->whereKey($id)->update(['status' => 2]);
+        // A model save, so the change reaches the activity log
+        StockIssueParent::query()->find($id)?->forceFill(['status' => 2])->save();
 
         if ($request->has('ajax')) {
             return response()->noContent();

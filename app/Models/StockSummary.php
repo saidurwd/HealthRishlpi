@@ -22,6 +22,9 @@ use Illuminate\Support\Facades\DB;
 #[Fillable(['store', 'item', 'batch', 'quantity', 'rate', 'amount'])]
 class StockSummary extends LegacyModel
 {
+    // Derived from the stock documents, which are logged
+    protected static $recordEvents = [];
+
     /**
      * Add stock (StockSummary::receiveStockSummary()).
      */

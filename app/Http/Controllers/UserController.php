@@ -101,6 +101,7 @@ class UserController extends Controller
             $input = $request->validate(['password' => ['required', 'max:100']], [], ['password' => User::label('password')]);
             $record->password = User::hashPassword($input['password']);
             $record->save();
+            activity('data')->performedOn($record)->event('updated')->log('password changed');
 
             return redirect()->route('user.admin')->with('success', 'Password was changed successfully');
         }

@@ -19,6 +19,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['user_id', 'login_time', 'logout_time'])]
 class AuditTrail extends LegacyModel
 {
+    // Sign-in records are a log already
+    protected static $recordEvents = [];
+
     public static function attributeLabels(): array
     {
         return ['id' => 'ID', 'user_id' => 'User', 'login_time' => 'Login Time', 'logout_time' => 'Logout Time'];

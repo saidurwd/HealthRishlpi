@@ -62,6 +62,28 @@ every protected page (8 users x 224 routes) was the same before and after.
 - As in Yii, actions nobody ever set up in `os_acl` were open to every
   group; the conversion kept them open, and they can now be switched off.
 
+## Activity log
+
+spatie/laravel-activitylog records every create, change and delete made
+through a model (who, when, old and new values), password changes (without
+the hash) and access matrix changes. The Activity Log page (Access Control
+menu, permission `activityLog.admin`, Super Users only by default) lists and
+filters them. Bulk query updates are not logged. For that reason the "delete"
+actions (status 2) save through the model, and only derived values (header
+totals, draft linking, stock summary) are written in bulk. Entries are kept
+three years (`ACTIVITYLOG_CLEAN_AFTER_DAYS`); `activitylog:clean` runs daily.
+Sign-ins stay in the Audit Trail and page views in Visitor Statistics.
+
+## Document numbers and stock
+
+- Document numbers (INV#, PRE#, PAT#, SR#, SI#, PO/, MRR/, ST/) keep the Yii
+  formats, but are chosen and saved under a database named lock per sequence
+  (`App\Support\DocumentNumber`), so saves at the same moment no longer get
+  the same number. The Yii app does not take the lock, so while both apps run
+  a clash between them is still possible (`health:reconcile` reports it).
+- Stock summary changes are one atomic `INSERT ... ON DUPLICATE KEY UPDATE
+  quantity = quantity + ?`, so simultaneous approvals add up.
+
 ## Porting conventions
 
 A Gii-style admin/create/update/delete module is a `CrudController`

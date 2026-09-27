@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BatchController;
@@ -113,6 +114,8 @@ Route::middleware(['auth', 'route.permission'])->group(function () {
         Route::post('accessall', 'accessall')->name('accessall');
         Route::post('accessallc', 'accessallc')->name('accessallc');
     });
+
+    Route::get('activityLog/admin', [ActivityLogController::class, 'admin'])->name('activityLog.admin');
 
     // Patients and prescriptions
     Route::crud('patient', PatientController::class);
