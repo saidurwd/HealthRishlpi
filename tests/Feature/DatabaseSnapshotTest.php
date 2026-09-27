@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
@@ -21,7 +22,7 @@ class DatabaseSnapshotTest extends TestCase
         }
 
         try {
-            $this->artisan('db:snapshot', ['directory' => $directory, '--keep' => 2])->assertSuccessful();
+            $this->assertSame(0, Artisan::call('db:snapshot', ['directory' => $directory, '--keep' => 2]), Artisan::output());
 
             $files = glob("$directory/*.sql.gz");
             $this->assertCount(2, $files);

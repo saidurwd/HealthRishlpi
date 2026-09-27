@@ -28,11 +28,18 @@ class DatabaseSnapshot extends Command
         chmod($credentials, 0600);
         file_put_contents($credentials, "[client]\nhost=\"{$connection['host']}\"\nport=\"{$connection['port']}\"\nuser=\"{$connection['username']}\"\npassword=\"{$connection['password']}\"\n");
 
+        $binary = $this->dumpBinary();
+        $options = '--single-transaction --routines --triggers --events';
+        // MySQL 8's mysqldump queries COLUMN_STATISTICS, which MariaDB lacks
+        if (preg_match('/Ver 8\.|Distrib 8\.|Ver 9\./', Process::run([$binary, '--version'])->output()) === 1) {
+            $options .= ' --column-statistics=0';
+        }
+
         try {
             $result = Process::timeout(3600)->run([
                 'bash', '-o', 'pipefail', '-c',
-                '"$0" --defaults-extra-file="$1" --single-transaction --routines --triggers --events "$2" | gzip > "$3"',
-                $this->dumpBinary(), $credentials, $connection['database'], $path,
+                '"$0" --defaults-extra-file="$1" '.$options.' "$2" | gzip > "$3"',
+                $binary, $credentials, $connection['database'], $path,
             ]);
         } finally {
             unlink($credentials);
