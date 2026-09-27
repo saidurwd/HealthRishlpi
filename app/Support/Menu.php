@@ -6,20 +6,28 @@ use Illuminate\Contracts\Auth\Access\Authorizable;
 
 /**
  * Builds the sidebar from config('menu') for one user: drops items they
- * lack the `can` permission for (and parents left empty), and marks the
- * item of the current route active along with its parents.
+ * lack the `can` permission for (and parents and section headers left
+ * empty), and marks the item of the current route active along with its
+ * parents.
  */
 class Menu
 {
     /**
      * @param  array<int, array<string, mixed>>  $items
-     * @return array<int, array{text: string, href: string, icon: ?string, active: bool, submenu: array<int, mixed>}>
+     * @return array<int, array{header: string}|array{text: string, href: string, icon: ?string, active: bool, submenu: array<int, mixed>}>
      */
     public static function build(array $items, ?Authorizable $user, ?string $currentRoute): array
     {
         $built = [];
 
         foreach ($items as $item) {
+            // Section headers are kept only when something visible follows them
+            if (isset($item['header'])) {
+                $built[] = ['header' => $item['header']];
+
+                continue;
+            }
+
             if (isset($item['can']) && ! $user?->can($item['can'])) {
                 continue;
             }
@@ -43,6 +51,7 @@ class Menu
             ];
         }
 
-        return $built;
+        return array_values(array_filter($built, fn ($entry, $i) => ! isset($entry['header'])
+            || (isset($built[$i + 1]) && ! isset($built[$i + 1]['header'])), ARRAY_FILTER_USE_BOTH));
     }
 }

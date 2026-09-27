@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AuthorizeRoute;
+use App\Http\Middleware\RecordActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['route.permission' => AuthorizeRoute::class]);
+
+        // Activity Log: pages opened and actions taken by signed-in users
+        $middleware->web(append: [RecordActivity::class]);
 
         // The Yii app saved form input untouched: '' stayed '' (MySQL, in
         // non-strict mode, stores it as 0 in numeric columns) and nothing was

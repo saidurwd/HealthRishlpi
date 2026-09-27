@@ -80,16 +80,19 @@ class ActivityLogTest extends TestCase
         $this->assertSame(0, Activity::query()->where('subject_type', AuditTrail::class)->count());
     }
 
-    public function test_the_page_lists_changes_and_needs_its_permission(): void
+    public function test_the_audit_log_lists_changes_and_needs_its_permission(): void
     {
         $this->post('/unit/create', ['full_name' => 'Litre', 'formal_name' => 'L', 'decimal_place' => '1']);
 
-        $this->get('/activityLog/admin')->assertOk()
+        $this->get('/auditLog/admin')->assertOk()
             ->assertSee('Rahima Khatun')
             ->assertSee('<strong>full_name</strong>: Litre', false)
             ->assertSee('Unit');
 
-        $this->group(2)->revokePermissionTo('activityLog.admin');
-        $this->get('/activityLog/admin')->assertRedirect('/site/noaccess');
+        $entry = Activity::query()->where('log_name', 'data')->latest('id')->firstOrFail();
+        $this->get("/auditLog/view/$entry->id")->assertOk()->assertSee('History of this record')->assertSee('Litre');
+
+        $this->group(2)->revokePermissionTo('auditLog.admin');
+        $this->get('/auditLog/admin')->assertRedirect('/site/noaccess');
     }
 }

@@ -68,7 +68,11 @@
             <nav class="mt-2">
                 <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="navigation" aria-label="Main navigation" data-accordion="false">
                     @foreach ($menu as $item)
-                        <x-menu-item :item="$item" />
+                        @if (isset($item['header']))
+                            <li class="nav-header">{{ $item['header'] }}</li>
+                        @else
+                            <x-menu-item :item="$item" />
+                        @endif
                     @endforeach
                 </ul>
             </nav>

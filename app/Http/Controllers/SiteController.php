@@ -4,13 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditTrail;
 use App\Models\User;
+use App\Support\About;
+use App\Support\SecurityLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class SiteController extends Controller
 {
+    /** Failed sign-ins allowed per username and IP address in a minute */
+    public const LOGIN_ATTEMPTS = 5;
+
     public function login(Request $request): View|RedirectResponse
     {
         if ($request->isMethod('get')) {
@@ -23,13 +31,29 @@ class SiteController extends Controller
             ['username' => 'Username', 'password' => 'Password', 'rememberMe' => 'Remember me next time'],
         );
 
-        $user = $this->authenticate($input['username'], $input['password']);
+        // Slow down password guessing: 5 failures a minute per username and IP
+        $throttleKey = 'login|'.Str::lower($input['username']).'|'.$request->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, self::LOGIN_ATTEMPTS)) {
+            return back()
+                ->withErrors(['password' => 'Too many sign-in attempts. Please try again in '.RateLimiter::availableIn($throttleKey).' seconds.'])
+                ->onlyInput('username', 'rememberMe');
+        }
+
+        [$user, $failure] = $this->authenticate($input['username'], $input['password']);
 
         if ($user === null) {
+            $attempts = RateLimiter::hit($throttleKey, 60);
+            SecurityLog::record('login.failed', ['username' => Str::limit($input['username'], 100, ''), 'reason' => $failure]);
+            if ($attempts >= self::LOGIN_ATTEMPTS) {
+                SecurityLog::record('login.lockout', ['username' => Str::limit($input['username'], 100, '')]);
+            }
+
             return back()
                 ->withErrors(['password' => 'Incorrect username or password.'])
                 ->onlyInput('username', 'rememberMe');
         }
+
+        RateLimiter::clear($throttleKey);
 
         Auth::login($user, $request->boolean('rememberMe'));
         $request->session()->regenerate();
@@ -47,21 +71,40 @@ class SiteController extends Controller
 
     /**
      * Port of UserIdentity::authenticate(). Every failure shows the same
-     * "Incorrect username or password." message, as in the Yii app.
+     * "Incorrect username or password." message, as in the Yii app; the
+     * reason only goes to the security log.
+     *
+     * @return array{0: ?User, 1: ?string} the user, or null and why
      */
-    private function authenticate(string $username, string $password): ?User
+    private function authenticate(string $username, string $password): array
     {
         // Yii used strpos(), so an "@" in the first position still means username
         $column = strpos($username, '@') ? 'email' : 'username';
         $user = User::query()->where($column, $username)->first();
 
-        if ($user === null || ! $user->passwordMatches($password)) {
-            return null;
+        if ($user === null) {
+            return [null, 'unknown user'];
+        }
+        if (! $user->passwordMatches($password)) {
+            return [null, 'wrong password'];
         }
 
-        $blocked = [User::STATUS_NOT_ACTIVE, User::STATUS_BANNED, User::STATUS_EXPIRED];
+        $blocked = [User::STATUS_NOT_ACTIVE => 'account not active', User::STATUS_BANNED => 'account banned', User::STATUS_EXPIRED => 'account expired'];
 
-        return in_array((int) $user->status, $blocked, true) ? null : $user;
+        return isset($blocked[(int) $user->status]) ? [null, $blocked[(int) $user->status]] : [$user, null];
+    }
+
+    /**
+     * Version, build and what's new; open to every signed-in user.
+     */
+    public function about(): View
+    {
+        return view('site.about', [
+            'version' => About::version(),
+            'release' => About::release(),
+            'changes' => About::changes(),
+            'database' => 'MariaDB '.explode('-', (string) DB::selectOne('SELECT VERSION() AS v')->v)[0],
+        ]);
     }
 
     public function logout(Request $request): RedirectResponse

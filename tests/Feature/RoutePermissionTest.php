@@ -81,9 +81,13 @@ class RoutePermissionTest extends TestCase
         $this->actingAs($user)->get('/unit/admin')->assertOk()
             ->assertSee('nav-item menu-open', false)
             ->assertSee('href="'.route('unit.admin').'" class="nav-link active"', false)
-            ->assertSee('Patient Directory')
+            ->assertSee('Patients')
+            ->assertSee('<li class="nav-header">CLINIC</li>', false)
             ->assertDontSee('Products')
-            // A parent without visible children is hidden
-            ->assertDontSee('Configuration');
+            // A parent without visible children is hidden, and so is a section left empty
+            ->assertDontSee('Clinical Setup')
+            ->assertDontSee('<li class="nav-header">MONITORING</li>', false)
+            // About is open to everyone
+            ->assertSee(route('site.about'), false);
     }
 }

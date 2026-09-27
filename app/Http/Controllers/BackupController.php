@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Backup;
 use App\Support\BackupEngine;
 use App\Support\Grid;
+use App\Support\SecurityLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -52,6 +53,7 @@ class BackupController extends Controller
 
         try {
             $backup = $engine->create((string) $request->input('type', 'gzip'), $request->user()->id);
+            SecurityLog::record('backup.exported', ['file' => $backup->attachment, 'size' => $backup->file_size], $backup);
 
             return redirect()->route('backup.admin')->with('success', 'Database backed up successfully! '
                 .$backup->tables_count.' tables exported in '.round(microtime(true) - $started, 2).'s. File: '.Backup::formatBytes($backup->file_size));
@@ -76,6 +78,8 @@ class BackupController extends Controller
             return redirect()->route('backup.admin')->with('error', 'The file <strong>'.e($backup->attachment).'</strong> does not exist');
         }
 
+        SecurityLog::record('backup.downloaded', ['file' => $backup->attachment], $backup);
+
         return response()->download($backup->path(), basename($backup->attachment));
     }
 
@@ -86,6 +90,7 @@ class BackupController extends Controller
         if (is_file($backup->path())) {
             @unlink($backup->path());
         }
+        SecurityLog::record('backup.deleted', ['file' => $backup->attachment]);
         $backup->delete();
 
         if ($request->has('ajax')) {

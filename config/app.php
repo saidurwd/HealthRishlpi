@@ -15,6 +15,9 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // Release of this application (CHANGELOG.md); the deploy adds the commit in release.json
+    'version' => '2.1.0',
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

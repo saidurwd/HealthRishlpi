@@ -28,7 +28,6 @@ class Reconcile extends Command
         }
 
         File::ensureDirectoryExists(self::directory());
-        File::put(self::directory().'/latest.json', json_encode(['taken_at' => now()->toDateTimeString(), 'findings' => $findings], JSON_PRETTY_PRINT));
 
         if ($this->option('baseline')) {
             File::put(self::baselinePath(), json_encode(['taken_at' => now()->toDateTimeString(), 'findings' => $findings], JSON_PRETTY_PRINT));
@@ -66,6 +65,8 @@ class Reconcile extends Command
         }
 
         $this->table(['Check', 'Findings', 'New', 'Changed', 'Resolved'], $summary);
+        // System Health shows the last run
+        File::put(self::directory().'/latest.json', json_encode(['taken_at' => now()->toDateTimeString(), 'drift' => $drift, 'findings' => $findings], JSON_PRETTY_PRINT));
 
         if ($drift > 0) {
             $this->error("$drift new or changed finding(s). Descriptions: ".collect(Reconciliation::checks())->map(fn ($d, $c) => "$c: $d")->implode('; '));

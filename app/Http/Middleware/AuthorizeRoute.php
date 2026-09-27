@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\SecurityLog;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,6 +20,8 @@ class AuthorizeRoute
         $user = $request->user();
 
         if ($user !== null && $name !== null && ! $user->can($name)) {
+            SecurityLog::record('access.denied', ['route' => $name, 'path' => '/'.$request->path(), 'method' => $request->method()]);
+
             return redirect()->route('site.noaccess')
                 ->with('error', 'You are not authorized to perform this action!');
         }

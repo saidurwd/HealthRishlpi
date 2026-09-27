@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BatchController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseReceiveController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SecurityEventController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\StateController;
@@ -30,6 +32,7 @@ use App\Http\Controllers\StockIssueController;
 use App\Http\Controllers\StockRequisitionController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\SystemHealthController;
 use App\Http\Controllers\ThanaController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
@@ -69,6 +72,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/site/logout', [SiteController::class, 'logout'])->name('site.logout');
     Route::get('/site/noaccess', [SiteController::class, 'noaccess'])->name('site.noaccess');
+    Route::get('/site/about', [SiteController::class, 'about'])->name('site.about');
 
     // DashboardController::beforeAction() skipped the ACL check
     Route::get('/dashboard/index', [DashboardController::class, 'index'])->name('dashboard.index');
@@ -115,7 +119,12 @@ Route::middleware(['auth', 'route.permission'])->group(function () {
         Route::post('accessallc', 'accessallc')->name('accessallc');
     });
 
+    // Monitoring
     Route::get('activityLog/admin', [ActivityLogController::class, 'admin'])->name('activityLog.admin');
+    Route::get('auditLog/admin', [AuditLogController::class, 'admin'])->name('auditLog.admin');
+    Route::get('auditLog/view/{id}', [AuditLogController::class, 'view'])->name('auditLog.view')->whereNumber('id');
+    Route::get('securityEvent/admin', [SecurityEventController::class, 'admin'])->name('securityEvent.admin');
+    Route::get('systemHealth/admin', [SystemHealthController::class, 'admin'])->name('systemHealth.admin');
 
     // Patients and prescriptions
     Route::crud('patient', PatientController::class);

@@ -37,6 +37,8 @@ jobs:
           composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
           npm ci
           npm run build
+          # Shown on the About and System Health pages
+          printf '{"commit":"%s","built_at":"%s","run":"%s"}\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GITHUB_RUN_NUMBER" > release.json
           tar -czf "$RUNNER_TEMP/release.tar.gz" \
             --exclude=./.git --exclude=./.github --exclude=./node_modules --exclude=./tests \
             --exclude=./storage --exclude=./public/uploads --exclude=./.env .

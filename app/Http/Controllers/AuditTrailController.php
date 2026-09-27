@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
 use App\Models\AuditTrail;
 use App\Models\User;
 use App\Support\Grid;
+use App\Support\SecurityLog;
 
 /**
- * Login history: grid and delete only.
+ * Login History: sign-in sessions (os_audit_trail, written by both apps)
+ * and the failed sign-in attempts from the security log.
  */
 class AuditTrailController extends CrudController
 {
@@ -15,9 +18,9 @@ class AuditTrailController extends CrudController
 
     protected string $route = 'auditTrail';
 
-    protected string $plural = 'Audit Trails';
+    protected string $plural = 'Login History';
 
-    protected string $singular = 'Audit Trail';
+    protected string $singular = 'Session';
 
     protected function grid(): Grid
     {
@@ -31,6 +34,11 @@ class AuditTrailController extends CrudController
 
     protected function filterData(): array
     {
-        return ['users' => User::query()->orderBy('full_name')->pluck('full_name', 'id')];
+        return [
+            'users' => User::query()->orderBy('full_name')->pluck('full_name', 'id'),
+            'failed' => Activity::query()->where('log_name', SecurityLog::LOG)->whereIn('event', ['login.failed', 'login.lockout'])
+                ->orderByDesc('id')->limit(50)->get(),
+            'openSessions' => AuditTrail::query()->whereNull('logout_time')->where('login_time', '>=', now()->subHours(12))->count(),
+        ];
     }
 }

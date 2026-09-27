@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Support\Menu;
+use App\Support\SecurityLog;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +35,12 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(Login::class, function (Login $event) {
             if ($event->user instanceof User) {
                 $event->user->syncRoleWithGroup();
+                SecurityLog::record('login', ['remember' => $event->remember], causer: $event->user);
+            }
+        });
+        Event::listen(Logout::class, function (Logout $event) {
+            if ($event->user instanceof User) {
+                SecurityLog::record('logout', causer: $event->user);
             }
         });
 

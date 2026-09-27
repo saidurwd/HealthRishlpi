@@ -123,6 +123,29 @@ Create, edit, restore and special edit share one screen
   reloading (`patient.medicines`/`patient.products`, migration 000009);
   the clinical notes sit beside them. Saving and numbering are unchanged.
 
+## Monitoring
+
+Under MONITORING in the menu (administrators; migration 000010):
+
+- **System Health**: application, database (pending migrations), storage
+  and disk space, scheduler heartbeat (every minute), daily reconciliation,
+  backups per disk, off-site copy and encryption, Nightwatch, sign-in
+  failures and today's logged errors.
+- **Audit Log**: record changes with old and new values; each entry opens the
+  record's full history.
+- **Activity Log**: pages opened and actions taken by signed-in users, with
+  time taken, IP and browser (`RecordActivity`, written after the response;
+  kept 180 days). Background requests are left out.
+- **Security Events** (`App\Support\SecurityLog`): sign-ins, failures (with
+  the reason, which users never see), lockouts, sign-outs, refused access,
+  password, account and permission changes, database exports, downloads and
+  deletions, with IP and browser.
+- **Login History**: the sign-in sessions both apps write (`os_audit_trail`)
+  and failed attempts.
+- Sign-in is rate limited: 5 failures a minute per username and IP.
+- **About** (everyone): version (`config/app.php`), build (`release.json`
+  from the deploy) and `CHANGELOG.md`.
+
 ## Porting conventions
 
 A Gii-style admin/create/update/delete module is a `CrudController`

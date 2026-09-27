@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasAttributeLabels;
 use App\Models\Concerns\TypecastsLikeYii;
 use App\Rules\YiiEmail;
+use App\Support\SecurityLog;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -69,6 +70,18 @@ class User extends Authenticatable
         static::saved(function (self $user) {
             if ($user->wasRecentlyCreated || $user->wasChanged('group_id')) {
                 $user->syncRoleWithGroup();
+            }
+        });
+
+        // Account changes are security events too
+        static::created(fn (self $user) => SecurityLog::record('user.created', ['group' => $user->group_id], $user));
+        static::deleted(fn (self $user) => SecurityLog::record('user.deleted', ['username' => $user->username], $user));
+        static::updated(function (self $user) {
+            if ($user->wasChanged('group_id')) {
+                SecurityLog::record('user.group_changed', ['from' => $user->getOriginal('group_id'), 'to' => $user->group_id], $user);
+            }
+            if ($user->wasChanged('status')) {
+                SecurityLog::record('user.status_changed', ['from' => $user->getOriginal('status'), 'to' => $user->status], $user);
             }
         });
     }

@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\Grid;
+use App\Support\SecurityLog;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -102,6 +103,7 @@ class UserController extends Controller
             $record->password = User::hashPassword($input['password']);
             $record->save();
             activity('data')->performedOn($record)->event('updated')->log('password changed');
+            SecurityLog::record('password.changed', ['by_self' => $record->id === $request->user()->id], $record);
 
             return redirect()->route('user.admin')->with('success', 'Password was changed successfully');
         }
