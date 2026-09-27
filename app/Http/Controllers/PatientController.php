@@ -18,6 +18,7 @@ use App\Models\Product;
 use App\Models\Thana;
 use App\Models\TransectionStatus;
 use App\Models\User;
+use App\Support\DocumentNumber;
 use App\Support\Grid;
 use App\Support\Stock;
 use Illuminate\Database\Eloquent\Model;
@@ -153,10 +154,12 @@ class PatientController extends CrudController
         if ($request->isMethod('post')) {
             $prescription->fill($this->validatedPrescription($request));
             $prescription->patient = $patient->id;
-            $prescription->pre_number = PatientPrescription::nextNumber(User::loginName());
             $prescription->created_on = now()->format('Y-m-d G:i:s');
             $prescription->created_by = $request->user()->id;
-            $prescription->save();
+            DocumentNumber::locked('prescription', function () use ($prescription) {
+                $prescription->pre_number = PatientPrescription::nextNumber(User::loginName());
+                $prescription->save();
+            });
 
             PrescriptionMedicine::query()
                 ->where(fn ($query) => $query->whereNull('parent')->orWhere('parent', 0))
@@ -225,6 +228,14 @@ class PatientController extends CrudController
             'thanas' => Thana::query()->where('status', 'Active')->orderBy('title')->get()
                 ->map(fn ($row) => ['value' => $row->id, 'label' => $row->title, 'chain' => (string) $row->district])->all(),
         ];
+    }
+
+    /**
+     * PAT# numbers follow the highest patient id: register one at a time.
+     */
+    public function create(Request $request): View|RedirectResponse
+    {
+        return DocumentNumber::locked('patient', fn () => parent::create($request));
     }
 
     /**

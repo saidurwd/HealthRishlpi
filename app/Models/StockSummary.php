@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\Stock;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Support\Facades\DB;
 
 /**
  * On-hand quantity per store, item and batch (`os_stock_summary`).
@@ -48,22 +49,24 @@ class StockSummary extends LegacyModel
             ->value('quantity');
     }
 
+    /**
+     * One atomic statement, so changes made at the same moment add up instead
+     * of the last save overwriting the others (the row is unique per
+     * store/item/batch). MySQL applies the assignments in order, so the
+     * amount uses the new quantity.
+     */
     private static function adjust(mixed $store, mixed $item, mixed $batch, float $change, ?float $createWith = null): void
     {
         $rate = Stock::itemRate($item, $store, $batch);
-        $row = static::query()->where('store', (int) $store)->where('batch', (int) $batch)->where('item', (int) $item)->first();
-
-        if ($row === null) {
-            $row = new self(['store' => (int) $store, 'item' => (int) $item, 'batch' => (int) $batch]);
-            $row->quantity = $createWith ?? $change;
-        } else {
-            $row->quantity = (float) $row->quantity + $change;
-        }
-
         // Yii stored a missing LIFO/FIFO rate (false) as 0
-        $row->rate = $rate === false ? 0 : $rate;
-        $row->amount = round((float) $row->quantity * (float) $rate, 2);
-        $row->save();
+        $storedRate = $rate === false ? 0 : $rate;
+        $initial = $createWith ?? $change;
+
+        DB::statement('
+            INSERT INTO '.DB::getQueryGrammar()->wrapTable('stock_summary').' (store, item, batch, quantity, rate, amount)
+            VALUES (?, ?, ?, ?, ?, ROUND(? * ?, 2))
+            ON DUPLICATE KEY UPDATE quantity = quantity + ?, rate = ?, amount = ROUND(quantity * ?, 2)
+        ', [(int) $store, (int) $item, (int) $batch, $initial, $storedRate, $initial, (float) $rate, $change, $storedRate, (float) $rate]);
 
         Stock::forgetOptionCaches();
     }

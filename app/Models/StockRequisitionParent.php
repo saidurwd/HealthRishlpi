@@ -66,7 +66,7 @@ class StockRequisitionParent extends LegacyModel
     public static function nextNumber(string $loginName): string
     {
         return 'SR#'.strtoupper($loginName).'-'.date('Y').'-'.PatientPrescription::nextSequence(
-            static::query()->orderByDesc('created_on')->value('requisition_number')
+            static::query()->orderByDesc('created_on')->orderByDesc('id')->value('requisition_number')
         );
     }
 }

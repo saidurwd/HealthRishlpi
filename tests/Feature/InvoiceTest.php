@@ -42,10 +42,11 @@ class InvoiceTest extends TestCase
 
         $this->user = $this->makeUser(['group_id' => User::SUPER_GROUP]);
         $this->actingAs($this->user)->withSession(['currency' => '৳']);
+        // Explicit ids: the id is a tinyint, and rolled-back inserts would still use up the counter
         DB::table('transection_status')->insert([
-            ['status_id' => 0, 'status_title' => 'Pending', 'user_view' => 1, 'transection_type' => 5],
-            ['status_id' => 1, 'status_title' => 'Approved', 'user_view' => 1, 'transection_type' => 5],
-            ['status_id' => 2, 'status_title' => 'Deleted', 'user_view' => 1, 'transection_type' => 5],
+            ['id' => 50, 'status_id' => 0, 'status_title' => 'Pending', 'user_view' => 1, 'transection_type' => 5],
+            ['id' => 51, 'status_id' => 1, 'status_title' => 'Approved', 'user_view' => 1, 'transection_type' => 5],
+            ['id' => 52, 'status_id' => 2, 'status_title' => 'Deleted', 'user_view' => 1, 'transection_type' => 5],
         ]);
 
         $unit = Unit::create(['full_name' => 'Piece', 'formal_name' => 'pcs', 'decimal_place' => 0]);

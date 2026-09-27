@@ -81,7 +81,7 @@ class PurchaseOrderParent extends LegacyModel
      */
     public static function nextNumber(): string
     {
-        return self::slashNumber('PO', static::query()->orderByDesc('created_on')->value('order_number'));
+        return self::slashNumber('PO', static::query()->orderByDesc('created_on')->orderByDesc('id')->value('order_number'));
     }
 
     /**

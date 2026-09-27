@@ -103,6 +103,6 @@ class PurchaseReceiveParent extends LegacyModel
 
     public static function nextNumber(): string
     {
-        return PurchaseOrderParent::slashNumber('MRR', static::query()->orderByDesc('created_on')->value('receive_number'));
+        return PurchaseOrderParent::slashNumber('MRR', static::query()->orderByDesc('created_on')->orderByDesc('id')->value('receive_number'));
     }
 }

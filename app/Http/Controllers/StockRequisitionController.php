@@ -10,6 +10,7 @@ use App\Models\StockRequisitionParent;
 use App\Models\StockSummary;
 use App\Models\TransectionStatus;
 use App\Models\User;
+use App\Support\DocumentNumber;
 use App\Support\Grid;
 use App\Support\Stock;
 use Illuminate\Database\Eloquent\Builder;
@@ -83,11 +84,13 @@ class StockRequisitionController extends Controller
 
             $parent->requisition_date = now()->format('Y-m-d G:i:s');
             $parent->requisition_by = $request->user()->id;
-            $parent->requisition_number = StockRequisitionParent::nextNumber(User::loginName());
             $parent->status = 0;
             $parent->created_by = $request->user()->id;
             $parent->created_on = now()->format('Y-m-d G:i:s');
-            $parent->save();
+            DocumentNumber::locked('stock_requisition', function () use ($parent) {
+                $parent->requisition_number = StockRequisitionParent::nextNumber(User::loginName());
+                $parent->save();
+            });
 
             $this->drafts($request)->update(['parent' => $parent->id]);
 
@@ -150,7 +153,8 @@ class StockRequisitionController extends Controller
      */
     public function convertissue(Request $request, int $id): RedirectResponse
     {
-        $issue = DB::transaction(function () use ($request, $id) {
+        // The issue number is taken inside the transaction: lock around all of it
+        $issue = DocumentNumber::locked('stock_issue', fn () => DB::transaction(function () use ($request, $id) {
             $issue = new StockIssueParent;
             $issue->forceFill([
                 'issue_date' => now()->format('Y-m-d G:i:s'),
@@ -178,7 +182,7 @@ class StockRequisitionController extends Controller
             StockRequisition::query()->where('parent', $id)->update(['converted' => 1]);
 
             return $issue;
-        });
+        }));
 
         return redirect()->route('stockIssue.update', $issue->id)->with('success', 'Data was saved successfully');
     }

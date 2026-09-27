@@ -8,6 +8,7 @@ use App\Models\StockTransferParent;
 use App\Models\Store;
 use App\Models\TransectionStatus;
 use App\Models\User;
+use App\Support\DocumentNumber;
 use App\Support\Grid;
 use App\Support\Stock;
 use Illuminate\Database\Eloquent\Builder;
@@ -65,12 +66,14 @@ class StockTransferController extends Controller
             }
 
             $parent->transfer_date = now()->format('Y-m-d G:i:s');
-            $parent->transfer_number = StockTransferParent::nextNumber();
             $parent->transfer_by = $request->user()->id;
             $parent->status = 0;
             $parent->created_by = $request->user()->id;
             $parent->created_on = now()->format('Y-m-d G:i:s');
-            $parent->save();
+            DocumentNumber::locked('stock_transfer', function () use ($parent) {
+                $parent->transfer_number = StockTransferParent::nextNumber();
+                $parent->save();
+            });
 
             $this->drafts($request)->update(['parent' => $parent->id]);
 

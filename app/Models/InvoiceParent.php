@@ -110,7 +110,7 @@ class InvoiceParent extends LegacyModel
     public static function nextNumber(string $loginName): string
     {
         return 'INV#'.strtoupper($loginName).'-'.date('Y').'-'.PatientPrescription::nextSequence(
-            static::query()->orderByDesc('created_on')->value('invoice_number')
+            static::query()->orderByDesc('created_on')->orderByDesc('id')->value('invoice_number')
         );
     }
 }

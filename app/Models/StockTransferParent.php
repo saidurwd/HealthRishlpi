@@ -67,6 +67,6 @@ class StockTransferParent extends LegacyModel
 
     public static function nextNumber(): string
     {
-        return PurchaseOrderParent::slashNumber('ST', static::query()->orderByDesc('created_on')->value('transfer_number'));
+        return PurchaseOrderParent::slashNumber('ST', static::query()->orderByDesc('created_on')->orderByDesc('id')->value('transfer_number'));
     }
 }

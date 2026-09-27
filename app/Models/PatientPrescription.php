@@ -84,7 +84,7 @@ class PatientPrescription extends LegacyModel
     public static function nextNumber(string $loginName): string
     {
         return 'PRE#'.strtoupper($loginName).'-'.date('Y').'-'.self::nextSequence(
-            static::query()->orderByDesc('created_on')->value('pre_number')
+            static::query()->orderByDesc('created_on')->orderByDesc('id')->value('pre_number')
         );
     }
 

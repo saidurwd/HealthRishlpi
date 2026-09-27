@@ -12,6 +12,7 @@ use App\Models\Service;
 use App\Models\StockSummary;
 use App\Models\TransectionStatus;
 use App\Models\User;
+use App\Support\DocumentNumber;
 use App\Support\Grid;
 use App\Support\Stock;
 use Illuminate\Database\Eloquent\Builder;
@@ -80,12 +81,14 @@ class InvoiceController extends Controller
             }
 
             $parent->invoice_date = now()->format('Y-m-d G:i:s');
-            $parent->invoice_number = InvoiceParent::nextNumber(User::loginName());
             $parent->invoice_by = $request->user()->id;
             $parent->status = 0;
             $parent->created_by = $request->user()->id;
             $parent->created_on = now()->format('Y-m-d G:i:s');
-            $parent->save();
+            DocumentNumber::locked('invoice', function () use ($parent) {
+                $parent->invoice_number = InvoiceParent::nextNumber(User::loginName());
+                $parent->save();
+            });
 
             $this->drafts($request)->update(['parent' => $parent->id]);
             $patient = Patient::query()->find($parent->patient);

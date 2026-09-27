@@ -8,6 +8,7 @@ use App\Models\PurchaseOrderParent;
 use App\Models\TransectionStatus;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Support\DocumentNumber;
 use App\Support\Grid;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -72,12 +73,14 @@ class PurchaseOrderController extends Controller
             }
 
             $parent->order_date = now()->format('Y-m-d G:i:s');
-            $parent->order_number = PurchaseOrderParent::nextNumber();
             $parent->order_by = $request->user()->id;
             $parent->status = 0;
             $parent->created_by = $request->user()->id;
             $parent->created_on = now()->format('Y-m-d G:i:s');
-            $parent->save();
+            DocumentNumber::locked('purchase_order', function () use ($parent) {
+                $parent->order_number = PurchaseOrderParent::nextNumber();
+                $parent->save();
+            });
 
             $this->drafts($request)->update(['parent' => $parent->id]);
 

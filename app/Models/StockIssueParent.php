@@ -95,7 +95,7 @@ class StockIssueParent extends LegacyModel
     public static function nextNumber(string $loginName): string
     {
         return 'SI#'.strtoupper($loginName).'-'.date('Y').'-'.PatientPrescription::nextSequence(
-            static::query()->orderByDesc('created_on')->value('issue_number')
+            static::query()->orderByDesc('created_on')->orderByDesc('id')->value('issue_number')
         );
     }
 }

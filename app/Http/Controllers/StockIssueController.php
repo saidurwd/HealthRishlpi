@@ -11,6 +11,7 @@ use App\Models\StockSummary;
 use App\Models\Store;
 use App\Models\TransectionStatus;
 use App\Models\User;
+use App\Support\DocumentNumber;
 use App\Support\Grid;
 use App\Support\Stock;
 use Illuminate\Database\Eloquent\Builder;
@@ -75,12 +76,14 @@ class StockIssueController extends Controller
             }
 
             $parent->issue_date = now()->format('Y-m-d G:i:s');
-            $parent->issue_number = StockIssueParent::nextNumber(User::loginName());
             $parent->issue_by = $request->user()->id;
             $parent->status = 0;
             $parent->created_by = $request->user()->id;
             $parent->created_on = now()->format('Y-m-d G:i:s');
-            $parent->save();
+            DocumentNumber::locked('stock_issue', function () use ($parent) {
+                $parent->issue_number = StockIssueParent::nextNumber(User::loginName());
+                $parent->save();
+            });
 
             $this->drafts($request)->update(['parent' => $parent->id]);
             StockIssueParent::query()->whereKey($parent->id)->update(['total_amount' => StockIssueParent::totalAmount($parent->id)]);

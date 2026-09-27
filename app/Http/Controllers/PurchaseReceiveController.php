@@ -15,6 +15,7 @@ use App\Models\StoreDocument;
 use App\Models\TransectionStatus;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Support\DocumentNumber;
 use App\Support\Grid;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -108,12 +109,14 @@ class PurchaseReceiveController extends Controller
             }
 
             $parent->receive_date = now()->format('Y-m-d G:i:s');
-            $parent->receive_number = PurchaseReceiveParent::nextNumber();
             $parent->receive_by = $request->user()->id;
             $parent->status = 0;
             $parent->created_by = $request->user()->id;
             $parent->created_on = now()->format('Y-m-d G:i:s');
-            $parent->save();
+            DocumentNumber::locked('purchase_receive', function () use ($parent) {
+                $parent->receive_number = PurchaseReceiveParent::nextNumber();
+                $parent->save();
+            });
 
             $this->drafts($request)->update(['parent' => $parent->id]);
             StoreDocument::storeUploads(StoreDocument::PURCHASE_RECEIVE, $parent->id, $request->file('doc_file', []), $request->user()->id);
