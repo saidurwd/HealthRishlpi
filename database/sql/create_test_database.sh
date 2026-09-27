@@ -23,6 +23,9 @@ client="$(command -v mariadb || command -v mysql)"
 "$client" -h"$host" -u"$user" -p"$pass" "$test_db" < "$schema"
 
 cd "$(dirname "$0")/../.."
-DB_HOST="$host" DB_USERNAME="$user" DB_PASSWORD="$pass" DB_DATABASE="$test_db" php artisan migrate --force --no-interaction
+# The test database gets the after-cutover migrations too, so they stay tested
+for path in database/migrations database/migrations-after-cutover; do
+    DB_HOST="$host" DB_USERNAME="$user" DB_PASSWORD="$pass" DB_DATABASE="$test_db" php artisan migrate --force --no-interaction --path="$path"
+done
 
 echo "Created $test_db from $schema and the migrations"

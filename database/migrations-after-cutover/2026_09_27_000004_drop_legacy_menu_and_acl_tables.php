@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\Schema;
  * first written to storage/app/migration-archive/ as an SQL file that can
  * be loaded back with the mysql client.
  *
- * The Yii app needs these tables: run this only after it is retired.
+ * The Yii app needs these tables, so this lives outside database/migrations
+ * (deploys never run it). Once Yii is retired:
+ *   php artisan migrate --force --path=database/migrations-after-cutover
  */
 return new class extends Migration
 {

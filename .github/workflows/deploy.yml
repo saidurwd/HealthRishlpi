@@ -1,0 +1,63 @@
+name: Deploy
+
+# Manual: Actions > Deploy > Run workflow. Add required reviewers to the
+# "production" environment (Settings > Environments) to gate it further.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_mysql, gd, zip, intl
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build release
+        run: |
+          composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
+          npm ci
+          npm run build
+          tar -czf "$RUNNER_TEMP/release.tar.gz" \
+            --exclude=./.git --exclude=./.github --exclude=./node_modules --exclude=./tests \
+            --exclude=./storage --exclude=./public/uploads --exclude=./.env .
+
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Upload and activate
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh_opts=(-i ~/.ssh/id_deploy -p "$PORT" -o BatchMode=yes)
+          ssh "${ssh_opts[@]}" "$USER@$HOST" "mkdir -p '$DEPLOY_PATH/incoming'"
+          scp -i ~/.ssh/id_deploy -P "$PORT" -o BatchMode=yes \
+            "$RUNNER_TEMP/release.tar.gz" deploy/activate.sh "$USER@$HOST:$DEPLOY_PATH/incoming/"
+          ssh "${ssh_opts[@]}" "$USER@$HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' bash '$DEPLOY_PATH/incoming/activate.sh' '$DEPLOY_PATH/incoming/release.tar.gz' && rm -f '$DEPLOY_PATH/incoming/release.tar.gz'"

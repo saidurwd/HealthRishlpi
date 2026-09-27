@@ -20,6 +20,8 @@ cp .env.example .env && php artisan key:generate   # then set DB_* in .env
   from `database/schema/legacy-schema.sql` (the live schema before any
   migration, no data) plus the migrations, then `php artisan test`. Tests
   run in rolled-back transactions.
+- Deployment: `deploy/README.md` (GitHub Actions → Deploy, zero-downtime
+  releases on the production server, Nightwatch for errors).
 - Checks (also run by GitHub Actions, `.github/workflows/ci.yml`, on
   MariaDB 11.4 like live): `vendor/bin/pint --test`,
   `vendor/bin/phpstan analyse` (Larastan, level 5, no baseline) and the tests.
@@ -32,13 +34,14 @@ live can be brought up to date with `php artisan migrate --force`.
 migration; keep it unchanged. Data is converted before anything is dropped,
 and drops go in their own migration.
 
-Before migrating live: take a backup, and rehearse on a copy of it.
+Deploys (`deploy/README.md`) take a full database snapshot before running
+pending migrations. Rehearse new migrations on a copy of live first.
 
 | Migration | What it does | Yii app |
 |---|---|---|
 | `2026_09_27_000001` / `000002` | Adds the spatie/laravel-permission tables (`os_roles`, `os_permissions`, pivots) plus labels | Unaffected |
 | `2026_09_27_000003` | Copies user groups to roles (same ids), protected routes to permissions and `os_acl` to grants, so everyone keeps exactly the access they had; gives every user the role of their group | Unaffected |
-| `2026_09_27_000004` | Drops `os_menu`, `os_acl`, `os_acl_action`, `os_acl_controller` and `os_user_group`, after checking every group and user has their role and archiving the tables to `storage/app/migration-archive/*.sql` | **Breaks it**: run only once Yii is retired (hold the file back until then) |
+| `migrations-after-cutover/2026_09_27_000004` | Drops `os_menu`, `os_acl`, `os_acl_action`, `os_acl_controller` and `os_user_group`, after checking every group and user has their role and archiving the tables to `storage/app/migration-archive/*.sql` | **Breaks it**: kept outside `database/migrations`, so deploys never run it; run it by hand once Yii is retired (see `deploy/README.md`) |
 
 The conversion was checked on a copy of the data: every user's access to
 every protected page (8 users x 224 routes) was the same before and after.
