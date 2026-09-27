@@ -18,7 +18,6 @@ use App\Models\StockSummary;
 use App\Models\Store;
 use App\Models\Unit;
 use App\Models\User;
-use App\Support\BackupEngine;
 use Tests\TestCase;
 
 /**
@@ -144,13 +143,5 @@ class ReportsAndToolsTest extends TestCase
         } finally {
             @unlink($backup->path());
         }
-    }
-
-    public function test_restore_splits_statements_outside_quotes(): void
-    {
-        $this->assertSame(
-            ["INSERT INTO t VALUES('a;b')", "INSERT INTO t VALUES('it\\'s; fine')", 'SELECT 1'],
-            BackupEngine::statements("INSERT INTO t VALUES('a;b');\nINSERT INTO t VALUES('it\\'s; fine');\nSELECT 1")
-        );
     }
 }

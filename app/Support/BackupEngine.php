@@ -10,8 +10,7 @@ use ZipArchive;
 /**
  * Port of the Yii app's BackupEngine: a plain SQL dump of every table
  * (DROP + CREATE + one INSERT per row), saved as .gz, .zip or .sql. The dump
- * is streamed to the file rather than built in memory. Restore splits a
- * dump into statements and runs them.
+ * is streamed to the file rather than built in memory.
  */
 class BackupEngine
 {
@@ -82,74 +81,6 @@ class BackupEngine
     }
 
     /**
-     * Run every statement of a backup file; returns how many ran.
-     */
-    public function restore(Backup $backup): int
-    {
-        $content = match ($backup->type) {
-            Backup::TYPE_GZIP => gzdecode((string) file_get_contents($backup->path())),
-            Backup::TYPE_ZIP => $this->sqlFromZip($backup->path()),
-            default => file_get_contents($backup->path()),
-        };
-
-        if (empty($content)) {
-            throw new RuntimeException('Backup file is empty or corrupted.');
-        }
-
-        $statements = self::statements($content);
-
-        DB::unprepared('SET FOREIGN_KEY_CHECKS = 0;');
-        foreach ($statements as $statement) {
-            DB::unprepared($statement);
-        }
-        DB::unprepared('SET FOREIGN_KEY_CHECKS = 1;');
-
-        return count($statements);
-    }
-
-    /**
-     * Split SQL on semicolons outside quoted strings (BackupController::parseSqlStatements()).
-     *
-     * @return array<int, string>
-     */
-    public static function statements(string $sql): array
-    {
-        $statements = [];
-        $current = '';
-        $inString = false;
-        $quote = '';
-        $length = strlen($sql);
-
-        for ($i = 0; $i < $length; $i++) {
-            $char = $sql[$i];
-
-            if ($inString) {
-                $current .= $char;
-                if ($char === $quote && ($i === 0 || $sql[$i - 1] !== '\\')) {
-                    $inString = false;
-                }
-            } elseif ($char === "'" || $char === '"') {
-                $inString = true;
-                $quote = $char;
-                $current .= $char;
-            } elseif ($char === ';') {
-                if (trim($current) !== '') {
-                    $statements[] = trim($current);
-                }
-                $current = '';
-            } else {
-                $current .= $char;
-            }
-        }
-
-        if (trim($current) !== '') {
-            $statements[] = trim($current);
-        }
-
-        return $statements;
-    }
-
-    /**
      * @param  array<int, string>  $tables
      * @param  callable(string): mixed  $write
      */
@@ -181,24 +112,5 @@ class BackupEngine
         }
 
         $write("SET foreign_key_checks = 1;\nCOMMIT;\n");
-    }
-
-    private function sqlFromZip(string $path): string
-    {
-        $zip = new ZipArchive;
-        $zip->open($path);
-
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            if (preg_match('/\.sql$/i', (string) $zip->getNameIndex($i)) === 1) {
-                $content = (string) $zip->getFromIndex($i);
-                $zip->close();
-
-                return $content;
-            }
-        }
-
-        $zip->close();
-
-        throw new RuntimeException('No SQL file found inside ZIP archive.');
     }
 }

@@ -79,6 +79,8 @@ return [
             'prefix_indexes' => true,
             'strict' => env('DB_STRICT', false),
             'engine' => null,
+            // spatie/laravel-backup: consistent dump without locking tables
+            'dump' => ['use_single_transaction', 'timeout' => 60 * 60],
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],

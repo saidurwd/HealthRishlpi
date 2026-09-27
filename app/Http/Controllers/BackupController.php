@@ -13,9 +13,11 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 /**
- * Database Backup: export (gzip / zip / plain SQL), download, restore,
- * delete and clean up old backups. Export, restore and cleanup were GET
- * links in Yii; they change data, so they are POSTs here.
+ * Database Backup: export (gzip / zip / plain SQL), download, delete and
+ * clean up old backups. Export and cleanup were GET links in Yii; they
+ * change data, so they are POSTs here. The one-click restore was removed:
+ * restoring overwrites every table (also the Yii app's), so it is done from
+ * the command line after checking the file (deploy/README.md).
  */
 class BackupController extends Controller
 {
@@ -55,29 +57,6 @@ class BackupController extends Controller
                 .$backup->tables_count.' tables exported in '.round(microtime(true) - $started, 2).'s. File: '.Backup::formatBytes($backup->file_size));
         } catch (Throwable $e) {
             return redirect()->route('backup.admin')->with('error', 'Backup failed: '.e($e->getMessage()));
-        }
-    }
-
-    public function restore(int $id, BackupEngine $engine): RedirectResponse
-    {
-        $backup = $this->find($id);
-
-        if (! is_file($backup->path())) {
-            return redirect()->route('backup.admin')->with('error', 'Backup file not found: '.e($backup->attachment));
-        }
-        if ($backup->status !== Backup::STATUS_SUCCESS) {
-            return redirect()->route('backup.admin')->with('error', 'Cannot restore from a failed backup.');
-        }
-
-        set_time_limit(0);
-        $started = microtime(true);
-
-        try {
-            $count = $engine->restore($backup);
-
-            return redirect()->route('backup.admin')->with('success', 'Database restored successfully in '.round(microtime(true) - $started, 2).'s. '.$count.' statements executed.');
-        } catch (Throwable $e) {
-            return redirect()->route('backup.admin')->with('error', 'Restore failed: '.e($e->getMessage()));
         }
     }
 

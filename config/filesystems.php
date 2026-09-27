@@ -30,6 +30,26 @@ return [
 
     'disks' => [
 
+        // Full backups (spatie/laravel-backup, config/backup.php)
+        'backup_local' => [
+            'driver' => 'local',
+            'root' => storage_path('app/laravel-backups'),
+            'throw' => true,
+        ],
+
+        // Off-site copy: any S3-compatible storage (AWS S3, Backblaze B2,
+        // Wasabi, DigitalOcean Spaces, ...)
+        'backup_offsite' => [
+            'driver' => 's3',
+            'key' => env('BACKUP_S3_KEY'),
+            'secret' => env('BACKUP_S3_SECRET'),
+            'region' => env('BACKUP_S3_REGION', 'us-east-1'),
+            'bucket' => env('BACKUP_S3_BUCKET'),
+            'endpoint' => env('BACKUP_S3_ENDPOINT'),
+            'use_path_style_endpoint' => (bool) env('BACKUP_S3_PATH_STYLE', false),
+            'throw' => true,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

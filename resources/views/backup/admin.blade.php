@@ -37,7 +37,6 @@
             ['header' => 'Checksum', 'value' => fn ($row) => $row->checksum],
             ['name' => 'created_by', 'value' => fn ($row) => $row->createdBy?->full_name, 'filter' => false],
             ['header' => 'Actions', 'buttons' => [
-                fn ($row) => '<form method=\'post\' action=\''.e(route('backup.restore', $row->id)).'\' class=\'d-inline\' onsubmit=\'return confirm(&quot;WARNING: Restoring will overwrite the current database. Are you absolutely sure?&quot;)\'><input type=\'hidden\' name=\'_token\' value=\''.csrf_token().'\'><button type=\'submit\' class=\'btn btn-sm btn-success\' title=\'Restore this backup\'><i class=\'fa fa-undo\'></i></button></form>',
                 fn ($row) => '<a href=\''.e(route('backup.download', $row->id)).'\' class=\'btn btn-sm btn-info\' title=\'Download\'><i class=\'fa fa-download\'></i></a>',
                 fn ($row) => '<a href=\''.e(route('backup.delete', $row->id)).'\' class=\'btn btn-sm btn-danger\' title=\'Delete\' data-grid-delete><i class=\'fa fa-times\'></i></a>',
             ]],

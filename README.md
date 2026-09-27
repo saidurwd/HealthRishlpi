@@ -176,7 +176,11 @@ Where the Yii app was visibly broken, the port does what the code intended:
   dashboard loads Chart.js from the same CDN as the Yii page, and its
   heatmap tooltips show the invoice count instead of a random number.
 - Database backups are written to `storage/app/backups` (not the public
-  uploads folder), streamed instead of built in memory.
+  uploads folder), streamed instead of built in memory. The one-click
+  Restore was removed (it overwrote every table, the Yii app's too, from a
+  browser click); restoring is a checked, manual step (`deploy/README.md`,
+  "Backups"). Nightly encrypted full backups, off site too, come from
+  spatie/laravel-backup.
 
 ## Port status
 

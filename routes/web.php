@@ -231,7 +231,6 @@ Route::middleware(['auth', 'route.permission'])->group(function () {
     Route::controller(BackupController::class)->prefix('backup')->name('backup.')->group(function () {
         Route::get('admin', 'admin')->name('admin');
         Route::post('exportdatabase', 'exportdatabase')->name('exportdatabase');
-        Route::post('restore/{id}', 'restore')->name('restore')->whereNumber('id');
         Route::post('cleanup', 'cleanup')->name('cleanup');
         Route::get('download/{id}', 'download')->name('download')->whereNumber('id');
         Route::post('delete/{id}', 'delete')->name('delete')->whereNumber('id');

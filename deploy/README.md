@@ -52,6 +52,16 @@ DB_PASSWORD=...
 LOG_STACK=daily
 NIGHTWATCH_ENABLED=true
 NIGHTWATCH_TOKEN=   # from nightwatch.laravel.com, production environment
+
+# Nightly encrypted backups of the database and uploads (see "Backups")
+BACKUP_DISKS=backup_local,backup_offsite
+BACKUP_ARCHIVE_PASSWORD=   # long random string; store it in your password manager too
+BACKUP_S3_KEY=
+BACKUP_S3_SECRET=
+BACKUP_S3_BUCKET=
+BACKUP_S3_REGION=
+BACKUP_S3_ENDPOINT=        # e.g. https://s3.eu-central-003.backblazeb2.com (empty for AWS)
+BACKUP_NOTIFY_MAIL=        # optional; needs MAIL_* set up
 ```
 
 `$DEPLOY_PATH/deploy.env`:
@@ -128,6 +138,36 @@ GitHub (Settings → Secrets and variables → Actions, and an environment named
 | `DEPLOY_PATH` | e.g. `/var/www/healthrishlpi` |
 | `DEPLOY_SSH_KEY` | private key of a key pair made for deploys; its public key goes in the deploy user's `~/.ssh/authorized_keys` |
 | `DEPLOY_KNOWN_HOSTS` | output of `ssh-keyscan -p <port> <host>` |
+
+## Backups
+
+Every night (scheduler, `routes/console.php`):
+
+- 01:00 `backup:clean` keeps every backup for 7 days, then dailies for 16 days,
+  weeklies for 8 weeks, monthlies for 4 months and yearlies for 2 years;
+- 01:30 `health:backup` zips the whole database (every table, the Yii app's
+  too) and the uploads folder, encrypts the zip with AES-256
+  (`BACKUP_ARCHIVE_PASSWORD`), checks it, and copies it to every disk in
+  `BACKUP_DISKS`: `storage/app/laravel-backups/` on the server and the
+  S3-compatible bucket. It refuses to copy off site without a password.
+- 07:30 `backup:monitor` fails if a disk has no backup from the last day.
+
+Failures show up in Nightwatch as failed scheduled tasks, and by mail if
+`BACKUP_NOTIFY_MAIL` is set. Run `php artisan health:backup` by hand once
+after setting up, and check the bucket.
+
+The one-click restore on the Database Backup page was removed: it overwrote
+every table, the Yii app's included, from a browser click. To restore:
+
+1. Download the zip (`backup:list` shows the disks) and extract it with a
+   tool that supports AES zip encryption, e.g. `7z x <file>.zip` with the
+   password.
+2. Load `db-dumps/*.sql.gz` into a **new** database first and check it:
+   `gunzip -c db-dumps/*.sql.gz | mariadb <new database>`.
+3. When it is right, put the site in maintenance mode (`php artisan down`),
+   take a snapshot of the current database (`php artisan db:snapshot …`),
+   load the dump into the live database, and `php artisan up`.
+4. Copy back any upload files needed from `uploads/`.
 
 ## Rolling back
 
