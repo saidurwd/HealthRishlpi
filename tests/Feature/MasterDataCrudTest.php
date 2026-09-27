@@ -60,7 +60,7 @@ class MasterDataCrudTest extends TestCase
     {
         $gridId = Str::kebab($route).'-grid';
 
-        $this->get("/$route/admin")->assertOk()->assertSee('NEW')->assertSee("id=\"$gridId\"", false)
+        $this->get("/$route/admin")->assertOk()->assertSee('href="'.route("$route.create").'"', false)->assertSee("id=\"$gridId\"", false)
             ->assertSee('No result found.');
         $this->get("/$route/create")->assertOk()->assertSee('Fields with');
 

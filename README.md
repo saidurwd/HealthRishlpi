@@ -123,6 +123,17 @@ Create, edit, restore and special edit share one screen
   reloading (`patient.medicines`/`patient.products`, migration 000009);
   the clinical notes sit beside them. Saving and numbering are unchanged.
 
+## Dashboard
+
+`DashboardController` + `App\Support\DashboardStats`: today's figures, then
+a period (today / 7 days / this month / this year) compared with the same
+stretch of the period before, so a month in progress is compared with the
+same days of last month. Money counts approved invoices only. Sections show
+by permission: money with `invoice.admin`, patient figures with
+`patient.admin`, stock alerts with `report.expiration`. Charts use Chart.js
+from the build, loaded only on the dashboard. The CSV export is unchanged;
+the old filter endpoint (`dashboard.ajaxFilter`) is gone.
+
 ## Monitoring
 
 Under MONITORING in the menu (administrators; migration 000010):

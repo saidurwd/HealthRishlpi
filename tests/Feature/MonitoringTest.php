@@ -113,6 +113,9 @@ class MonitoringTest extends TestCase
             ->assertSee('never ran')
             ->assertSee('Something is wrong and needs fixing.');
 
+        // Backup status comes from the package's own monitor configuration
+        $this->assertStringStartsWith('Disk backup_local', SystemHealth::checks()['Backups'][0]['label']);
+
         Cache::forever(SystemHealth::HEARTBEAT_KEY, now());
         $this->assertStringContainsString('last ran', collect(SystemHealth::checks()['Scheduled jobs'])->firstWhere('label', 'Scheduler')['value']);
     }

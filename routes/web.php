@@ -76,7 +76,6 @@ Route::middleware('auth')->group(function () {
 
     // DashboardController::beforeAction() skipped the ACL check
     Route::get('/dashboard/index', [DashboardController::class, 'index'])->name('dashboard.index');
-    Route::post('/dashboard/ajaxFilter', [DashboardController::class, 'ajaxFilter'])->name('dashboard.ajaxFilter');
     Route::get('/dashboard/export', [DashboardController::class, 'export'])->name('dashboard.export');
 });
 

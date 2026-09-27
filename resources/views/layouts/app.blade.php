@@ -18,12 +18,34 @@
                 <li class="nav-item">
                     <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button" title="Collapse Menu"><i class="fa fa-bars"></i></a>
                 </li>
-                <li class="nav-item dropdown d-none d-md-block">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="fa fa-plus"></i> ADD</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url('/user/create') }}">+ USER</a></li>
-                    </ul>
-                </li>
+                @php
+                    $quickAdd = array_filter([
+                        'patient.create' => ['New patient', 'fa-user-plus'],
+                        'invoice.create' => ['New invoice', 'fa-cart-plus'],
+                        'purchaseReceive.create' => ['Receive goods', 'fa-truck-ramp-box'],
+                        'user.create' => ['New user', 'fa-user-gear'],
+                    ], fn ($item, $route) => auth()->user()->can($route), ARRAY_FILTER_USE_BOTH);
+                @endphp
+                @if ($quickAdd !== [])
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-plus-circle"></i> <span class="d-none d-md-inline">Quick add</span></a>
+                        <ul class="dropdown-menu">
+                            @foreach ($quickAdd as $route => [$label, $icon])
+                                <li><a class="dropdown-item" href="{{ route($route) }}"><i class="fa {{ $icon }} fa-fw me-1 text-primary"></i> {{ $label }}</a></li>
+                            @endforeach
+                        </ul>
+                    </li>
+                @endif
+                @can('patient.admin')
+                    <li class="nav-item d-none d-md-block">
+                        <form method="get" action="{{ route('patient.admin') }}" class="navbar-search-form ms-2" role="search">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa fa-search text-body-secondary"></i></span>
+                                <input type="search" name="Patient[name]" class="form-control border-start-0 bg-body-tertiary" placeholder="Find patient: name, PAT#, mobile" aria-label="Find patient">
+                            </div>
+                        </form>
+                    </li>
+                @endcan
             </ul>
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
@@ -42,8 +64,16 @@
                             <img src="{{ auth()->user()->photoUrl() }}" class="rounded-circle shadow" alt="Picture">
                             <p>
                                 {{ auth()->user()->full_name }}
-                                <small>{{ auth()->user()->email }}</small>
+                                <small>{{ auth()->user()->group0?->name }} · {{ auth()->user()->email }}</small>
                             </p>
+                        </li>
+                        <li class="user-body">
+                            <div class="d-flex justify-content-around small">
+                                <a href="{{ route('site.about') }}"><i class="fa fa-circle-info"></i> About</a>
+                                @can('systemHealth.admin')
+                                    <a href="{{ route('systemHealth.admin') }}"><i class="fa fa-heart-pulse"></i> System health</a>
+                                @endcan
+                            </div>
                         </li>
                         <li class="user-footer">
                             <a href="{{ url('/user/view/'.auth()->id()) }}" class="btn btn-default btn-flat"><i class="fa fa-user"></i> My Profile</a>
@@ -95,9 +125,11 @@
 
     <footer class="app-footer">
         <div class="float-end d-none d-sm-inline">
-            <i>Last account activity <i class="fa fa-clock-o"></i> <strong>{{ now()->format('M j Y, g:i:s A') }}</strong></i>
+            @if (auth()->user()->lastvisit)
+                <i class="fa fa-clock-o"></i> Signed in {{ \Illuminate\Support\Carbon::parse(auth()->user()->lastvisit)->format('M j, g:i A') }}
+            @endif
         </div>
-        Copyright &copy; {{ config('app.name') }} {{ date('Y') }}. Developed by <a href="http://www.optimosolution.com" target="_blank" rel="noopener">Optimo Solution</a>
+        <a href="{{ route('site.about') }}" class="text-decoration-none">{{ config('app.name') }} v{{ config('app.version') }}</a> &copy; {{ date('Y') }} {{ config('legacy.adminName') }}. Developed by <a href="http://www.optimosolution.com" target="_blank" rel="noopener">Optimo Solution</a>
     </footer>
 </div>
 @stack('scripts')

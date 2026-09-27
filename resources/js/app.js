@@ -7,6 +7,7 @@ import './chained';
 import './line-form';
 import './invoice';
 import './prescription';
+import './dashboard';
 
 window.bootstrap = bootstrap;
 window.Grid = Grid;

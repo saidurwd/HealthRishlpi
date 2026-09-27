@@ -113,18 +113,36 @@ class ReportsAndToolsTest extends TestCase
         $this->post('/report/periodstock', ['start_date' => date('Y-m-01'), 'end_date' => date('Y-m-d')])->assertOk()->assertSee('Tusca');
     }
 
-    public function test_dashboard_filter_and_export(): void
+    public function test_dashboard_shows_today_and_the_period_and_exports(): void
     {
-        $this->sale('Male');
+        $patient = $this->sale('Male');
 
-        $this->get('/dashboard/index')->assertOk()->assertSee('Health Management Dashboard')->assertSee('Male patient');
+        $this->get('/dashboard/index')->assertOk()
+            ->assertSee('New patients today')
+            ->assertSee('Approved sales today')
+            ->assertSee('Revenue · This month')
+            ->assertSee('Latest invoices')
+            ->assertSee('INV#T-'.$patient->id)
+            ->assertSee('Fever')
+            ->assertSee('Napa');
 
-        $this->postJson('/dashboard/ajaxFilter', ['start_date' => date('Y-m-01'), 'end_date' => date('Y-m-t'), 'category' => 'all', 'department' => 'all'])
-            ->assertOk()
-            ->assertJsonPath('totalPatients', 1)
-            ->assertJsonStructure(['monthlyRevenue', 'trendWeek' => ['labels', 'patients', 'revenue'], 'demographics', 'heatmap', 'recentActivity']);
+        $this->get('/dashboard/index?period=year')->assertOk()->assertSee('Revenue · This year');
+        $this->get('/dashboard/index?period=nonsense')->assertOk()->assertSee('Revenue · This month');
 
         $this->get('/dashboard/export')->assertOk()->assertHeader('Content-Type', 'text/csv; charset=utf-8')->assertSee('Total Patients,1');
+    }
+
+    public function test_dashboard_shows_money_only_to_those_who_manage_invoices(): void
+    {
+        $this->sale('Female');
+        $clerk = $this->makeUser(['group_id' => 4, 'username' => 'clerk', 'email' => 'clerk@example.com']);
+        $this->group(4)->syncPermissions(['patient.admin']);
+
+        $this->actingAs($clerk)->get('/dashboard/index')->assertOk()
+            ->assertSee('New patients today')
+            ->assertDontSee('Approved sales today')
+            ->assertDontSee('Latest invoices')
+            ->assertDontSee('Export');
     }
 
     public function test_backup_export_download_and_delete(): void

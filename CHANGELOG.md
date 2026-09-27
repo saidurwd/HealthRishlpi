@@ -12,7 +12,16 @@ What changed for the people using Health Program Software. Newest first.
 - **About** page with the version and what's new.
 - Sign-in is rate limited against password guessing: five failed attempts a
   minute for a username from one address.
-- The menu is grouped into sections.
+- The menu is grouped into sections (Clinic, Pharmacy & Store, Reports,
+  Administration, Monitoring, Help).
+- **Dashboard** redesigned: today at a glance (new patients, consultations,
+  approved sales, invoices waiting for approval), then today, the last 7
+  days, this month or this year compared with the same stretch before;
+  revenue and consultations chart, sales mix, latest invoices, stock
+  expiring within 90 days, top diagnoses, medicines and staff. Each person
+  sees only the figures their permissions cover.
+- Top bar: quick add (patient, invoice, goods received, user) and a patient
+  search box; the footer shows the version.
 - **Patients**: compact list with one search box and quick actions, a
   profile page with visit totals and next steps, a registration form that
   shows every section, and a faster prescription screen.

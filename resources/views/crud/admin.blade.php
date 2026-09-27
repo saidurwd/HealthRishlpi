@@ -8,11 +8,11 @@
 @endsection
 
 @section('content')
-    <x-card icon="fa fa-home" :title="$page['plural']" flush>
+    <x-card icon="fa fa-list" :title="$page['plural']" flush class="card-primary card-outline">
         <x-slot:tools>
             @yield('tools')
             @if (Route::has($page['route'].'.create'))
-                <a href="{{ route($page['route'].'.create') }}" class="btn btn-sm btn-primary" title="New"><i class="fa fa-plus"></i> NEW</a>
+                <a href="{{ route($page['route'].'.create') }}" class="btn btn-sm btn-primary" title="New {{ $page['singular'] }}"><i class="fa fa-plus"></i> New {{ strtolower($page['singular']) }}</a>
             @endif
         </x-slot:tools>
         @yield('grid')

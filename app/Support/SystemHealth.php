@@ -6,6 +6,7 @@ use App\Models\Activity;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Spatie\Backup\Config\Config;
 use Spatie\Backup\Tasks\Monitor\BackupDestinationStatusFactory;
 use Throwable;
 
@@ -163,7 +164,8 @@ class SystemHealth
         $checks = [];
 
         try {
-            $statuses = collect(config('backup.monitor_backups'))->flatMap(fn (array $monitor) => BackupDestinationStatusFactory::createForSingleMonitor($monitor));
+            // Built from config/backup.php by the package, as backup:monitor does
+            $statuses = BackupDestinationStatusFactory::createForMonitorConfig(Config::fromArray(config('backup'))->monitoredBackups);
             foreach ($statuses as $status) {
                 $destination = $status->backupDestination();
                 $newest = $destination->newestBackup();
