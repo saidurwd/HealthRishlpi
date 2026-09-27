@@ -43,6 +43,7 @@ pending migrations. Rehearse new migrations on a copy of live first.
 | `2026_09_27_000003` | Copies user groups to roles (same ids), protected routes to permissions and `os_acl` to grants, so everyone keeps exactly the access they had; gives every user the role of their group | Unaffected |
 | `migrations-after-cutover/2026_09_27_000004` | Drops `os_menu`, `os_acl`, `os_acl_action`, `os_acl_controller` and `os_user_group`, after checking every group and user has their role and archiving the tables to `storage/app/migration-archive/*.sql` | **Breaks it**: kept outside `database/migrations`, so deploys never run it; run it by hand once Yii is retired (see `deploy/README.md`) |
 | `migrations-after-cutover/2026_09_27_000012` | Drops `os_visitor` (old page-view statistics; nothing writes it any more) after archiving it | **Breaks** Yii's Visitor page only; run after the cutover |
+| `migrations-after-cutover/2026_09_27_000013` | Drops tables neither app uses once Yii is gone: `os_cache` (never used; both apps cache in files), `os_yiisession` (Yii's sign-in sessions) and `os_sessions` (development databases only); structures and `os_cache` rows are archived first (`App\Support\TableArchive`) | **Breaks** Yii's sign-in; run after the cutover. Keep `CACHE_STORE`/`SESSION_DRIVER` on files (or Redis), not `database` |
 
 The conversion was checked on a copy of the data: every user's access to
 every protected page (8 users x 224 routes) was the same before and after.
