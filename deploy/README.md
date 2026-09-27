@@ -111,6 +111,12 @@ Nightwatch settings: request payloads are not captured
 still contain values, such as a failed query's bindings. Check that sending
 them to Nightwatch fits your rules for patient data.
 
+Scheduler (crontab of the deploy user):
+
+```
+* * * * * cd /var/www/healthrishlpi/current && php artisan schedule:run >> /dev/null 2>&1
+```
+
 GitHub (Settings → Secrets and variables → Actions, and an environment named
 `production`, optionally with required reviewers):
 
@@ -132,11 +138,43 @@ DEPLOY_PATH=/var/www/healthrishlpi $DEPLOY_PATH/current/deploy/rollback.sh
 This rolls back code only. To undo a migration's data changes, restore the
 snapshot from `backups/` taken just before it (test the restore on a copy first).
 
+## Parallel run (both apps on the live database)
+
+1. Set up the server as above and deploy. The first deploy snapshots the
+   database and runs the conversion migrations. Yii keeps working.
+2. Straight away, before anyone uses the Laravel app, record the baseline:
+   `php artisan health:reconcile --baseline` (in `current/`). It notes the
+   inconsistencies the data already has, so later runs only report new ones.
+   On a copy of today's data these were: 29 stock rows that differ from their
+   movements, 40 invoice and 5 issue totals that differ from their lines,
+   8 document numbers used twice, and 546 prescription medicines whose
+   prescription was deleted.
+3. Every morning the scheduler runs `health:reconcile`. A failed run
+   (visible in Nightwatch, details in `storage/app/reconcile/latest.json`)
+   means something new is inconsistent: look at the listed records, find
+   which app wrote them (`created_by`, `created_on`), and fix the cause
+   before going on.
+4. Rules while both apps run:
+   - Manage users, groups and permissions in the Laravel app. The Yii access
+     manager (`os_acl`) no longer affects Laravel, and Laravel's permissions
+     do not affect Yii. Users and group changes made in Yii are picked up at
+     the user's next Laravel login.
+   - Move staff over module by module (e.g. reports, then patients and
+     prescriptions, then invoices, then purchasing and stock). Each module
+     has one app at a time, and staff use Laravel for it only after they
+     have checked it.
+5. When every module runs on Laravel and the reports stay clean, plan the
+   cutover.
+
 ## Cutover (once the Yii app is retired)
 
-1. Take a backup: `php artisan db:snapshot $DEPLOY_PATH/backups` in `current/`.
-2. `php artisan migrate --force --path=database/migrations-after-cutover` drops
+1. Take the Yii app offline (its site disabled), then run
+   `php artisan health:reconcile` one last time and check it is clean.
+2. Take a backup: `php artisan db:snapshot $DEPLOY_PATH/backups` in `current/`.
+3. `php artisan migrate --force --path=database/migrations-after-cutover` drops
    the old menu/ACL tables. It archives them to `storage/app/migration-archive/`
    first and refuses if any group or user lacks their role.
-3. Move the uploads folder from the Yii app to `shared/uploads` and remove
-   `UPLOADS_PATH` from `deploy.env`.
+4. Move the uploads folder from the Yii app to `shared/uploads`, remove
+   `UPLOADS_PATH` from `deploy.env` and deploy once more.
+5. Remove the `health:reconcile` schedule from `routes/console.php` (Phase 4
+   replaces it with a stock integrity check) and archive the Yii code.

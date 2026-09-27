@@ -38,6 +38,19 @@ class AuthTest extends TestCase
         $this->assertNotEquals('0000-00-00 00:00:00', User::query()->find($user->id)->lastvisit);
     }
 
+    public function test_login_gives_users_made_by_the_yii_app_the_role_of_their_group(): void
+    {
+        $this->group(3, 'Manager');
+        // Written straight to the table, as the Yii app does: no role yet
+        DB::table('user')->insert(['full_name' => 'Yii User', 'username' => 'yiiuser', 'email' => 'yii@example.com', 'password' => sha1('secret'), 'group_id' => 3, 'status' => 1, 'photo' => '']);
+        $user = User::query()->where('username', 'yiiuser')->firstOrFail();
+        $this->assertSame([], $user->getRoleNames()->all());
+
+        $this->post('/site/login', ['username' => 'yiiuser', 'password' => 'secret'])->assertRedirect('/dashboard/index');
+
+        $this->assertSame(['Manager'], $user->fresh()->getRoleNames()->all());
+    }
+
     public function test_remember_me_signs_in_a_new_session_without_a_remember_token_column(): void
     {
         $user = $this->makeUser();

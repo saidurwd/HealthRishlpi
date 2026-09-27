@@ -66,9 +66,23 @@ class User extends Authenticatable
     {
         static::saved(function (self $user) {
             if ($user->wasRecentlyCreated || $user->wasChanged('group_id')) {
-                $user->syncRoles(Role::query()->whereKey($user->group_id)->get());
+                $user->syncRoleWithGroup();
             }
         });
+    }
+
+    /**
+     * Give the user exactly the role of their group (none if the group has
+     * no role). Also runs at every login, because while both apps share the
+     * database the Yii app can add users or change groups behind our back.
+     */
+    public function syncRoleWithGroup(): void
+    {
+        $expected = Role::query()->whereKey($this->group_id)->pluck('id')->all();
+
+        if ($this->roles()->pluck('id')->all() != $expected) {
+            $this->syncRoles($expected);
+        }
     }
 
     public static function attributeLabels(): array

@@ -1,8 +1,7 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// While the Yii and Laravel apps share the database: report new inconsistencies
+// (a failed run shows up in Nightwatch). See deploy/README.md, "Parallel run".
+Schedule::command('health:reconcile')->dailyAt('07:00');

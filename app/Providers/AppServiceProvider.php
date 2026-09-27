@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Support\Menu;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
@@ -26,6 +28,13 @@ class AppServiceProvider extends ServiceProvider
     {
         // Super users pass every permission check (the Yii app's group 1 checks)
         Gate::before(fn (User $user) => $user->isSuper() ? true : null);
+
+        // Covers users and group changes made in the Yii app (also on "remember me" logins)
+        Event::listen(Login::class, function (Login $event) {
+            if ($event->user instanceof User) {
+                $event->user->syncRoleWithGroup();
+            }
+        });
 
         View::composer('layouts.app', function ($view) {
             $view->with('menu', Menu::build(config('menu'), auth()->user(), request()->route()?->getName()));
