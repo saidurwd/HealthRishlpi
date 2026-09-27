@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAttributeLabels;
+use App\Models\Concerns\TypecastsLikeYii;
+use App\Rules\YiiEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Validation\Rule;
 
 /**
  * Application user (`os_user`).
@@ -32,7 +36,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 #[Hidden(['password'])]
 class User extends Authenticatable
 {
-    use HasAttributeLabels;
+    use HasAttributeLabels, TypecastsLikeYii;
 
     // Values of os_user.status that block login (UserIdentity::ERROR_STATUS_*)
     public const STATUS_NOT_ACTIVE = 2;
@@ -60,6 +64,55 @@ class User extends Authenticatable
             'status' => 'Status',
             'picture' => 'Picture',
         ];
+    }
+
+    /**
+     * Rules of the create/update form. The password is only on the create
+     * form (it has its own "change password" form), and `photo` is the
+     * uploaded file, which Yii did not validate.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function rules(?self $model = null): array
+    {
+        return array_merge([
+            'full_name' => ['required', 'max:150'],
+            'username' => ['required', 'max:100', Rule::unique(self::class)->ignore($model?->getKey())],
+            'email' => ['required', 'max:100', Rule::unique(self::class)->ignore($model?->getKey()), new YiiEmail],
+        ], $model === null ? ['password' => ['required', 'max:100']] : [], [
+            'group_id' => ['integer'],
+            'department' => ['integer'],
+            'status' => ['integer'],
+            'photo' => ['nullable', 'image'],
+        ]);
+    }
+
+    /** @return BelongsTo<UserGroup, $this> */
+    public function group0(): BelongsTo
+    {
+        return $this->belongsTo(UserGroup::class, 'group_id');
+    }
+
+    /** @return BelongsTo<Department, $this> */
+    public function department0(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department');
+    }
+
+    /** @return BelongsTo<UserStatus, $this> */
+    public function status0(): BelongsTo
+    {
+        return $this->belongsTo(UserStatus::class, 'status');
+    }
+
+    /**
+     * Yii's Yii::app()->user->name: what the user typed to sign in (username
+     * or email), used in prescription and invoice numbers. A session
+     * restored by "remember me" falls back to the username.
+     */
+    public static function loginName(): string
+    {
+        return (string) session('login_name', auth()->user()?->username);
     }
 
     public static function hashPassword(string $plain): string

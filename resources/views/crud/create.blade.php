@@ -11,7 +11,7 @@
         <x-slot:tools>
             <a href="{{ route($page['route'].'.admin') }}" class="btn btn-sm btn-primary" title="Manage"><i class="fa fa-home"></i> MANAGE</a>
         </x-slot:tools>
-        <form method="post" id="{{ Str::kebab($page['route']) }}-form">
+        <form method="post" id="{{ Str::kebab($page['route']) }}-form" @if ($multipart ?? false) enctype="multipart/form-data" @endif>
             @csrf
             <p class="text-body-secondary">Fields with <span class="required text-danger">*</span> are required.</p>
             <x-form.errors />

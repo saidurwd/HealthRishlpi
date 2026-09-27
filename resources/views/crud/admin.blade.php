@@ -10,7 +10,10 @@
 @section('content')
     <x-card icon="fa fa-home" :title="$page['plural']" flush>
         <x-slot:tools>
-            <a href="{{ route($page['route'].'.create') }}" class="btn btn-sm btn-primary" title="New"><i class="fa fa-plus"></i> NEW</a>
+            @yield('tools')
+            @if (Route::has($page['route'].'.create'))
+                <a href="{{ route($page['route'].'.create') }}" class="btn btn-sm btn-primary" title="New"><i class="fa fa-plus"></i> NEW</a>
+            @endif
         </x-slot:tools>
         @yield('grid')
     </x-card>

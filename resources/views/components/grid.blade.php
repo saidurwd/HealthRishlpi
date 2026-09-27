@@ -6,6 +6,7 @@
       ['name' => 'x', 'filter' => false]          no filter
       ['name' => 'x', 'value' => fn ($row) => ..., 'raw' => true]   custom cell (raw = unescaped HTML)
       ['header' => 'Actions', 'buttons' => ['update', 'delete']]    CButtonColumn, links to "{route}.{button}"
+      ['name' => 'amount', 'footer' => '৳10.00']      footer cell (a row of footers shows when any column has one)
     Sorting, paging and filtering are handled by resources/js/grid.js.
 --}}
 @php
@@ -96,6 +97,15 @@
                     </tr>
                 @endforelse
             </tbody>
+            @if (collect($columns)->contains(fn ($c) => isset($c['footer'])))
+                <tfoot>
+                    <tr>
+                        @foreach ($columns as $column)
+                            <td class="fw-bold {{ $column['class'] ?? '' }}">{{ $column['footer'] ?? '' }}</td>
+                        @endforeach
+                    </tr>
+                </tfoot>
+            @endif
         </table>
     </div>
     <x-grid.pager :paginator="$grid->rows" />

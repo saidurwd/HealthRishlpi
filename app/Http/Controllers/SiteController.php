@@ -36,6 +36,7 @@ class SiteController extends Controller
 
         User::query()->whereKey($user->id)->update(['lastvisit' => now()]);
         $request->session()->put('currency', config('legacy.currency'));
+        $request->session()->put('login_name', $input['username']);
         AuditTrail::recordLogin($user->id);
 
         return redirect('/dashboard/index')->with(

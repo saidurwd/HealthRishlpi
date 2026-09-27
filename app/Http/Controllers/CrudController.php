@@ -36,6 +36,9 @@ abstract class CrudController extends Controller
     /** False where the Yii delete action was commented out (it still answered, but deleted nothing) */
     protected bool $deletable = true;
 
+    /** Flash message after a create or update */
+    protected string $savedMessage = 'Data was saved successfully';
+
     /**
      * The grid query with its filters (the model's search() in Yii).
      */
@@ -44,7 +47,7 @@ abstract class CrudController extends Controller
     public function admin(): View
     {
         return view($this->viewPath('admin'), array_merge([
-            'grid' => $this->grid()->paginate(config('legacy.pageSize')),
+            'grid' => $this->grid()->paginate($this->pageSize()),
             'page' => $this->page(),
         ], $this->filterData()));
     }
@@ -59,7 +62,7 @@ abstract class CrudController extends Controller
             $record->save();
             $this->saved($record);
 
-            return redirect()->route($this->route.'.admin')->with('success', 'Data was saved successfully');
+            return $this->afterSave($record)->with('success', $this->savedMessage);
         }
 
         return $this->form('create', $record);
@@ -75,7 +78,7 @@ abstract class CrudController extends Controller
             $record->save();
             $this->saved($record);
 
-            return redirect()->route($this->route.'.admin')->with('success', 'Data was saved successfully');
+            return $this->afterSave($record)->with('success', $this->savedMessage);
         }
 
         return $this->form('update', $record);
@@ -98,6 +101,14 @@ abstract class CrudController extends Controller
         }
 
         return redirect($request->input('returnUrl', route($this->route.'.admin')));
+    }
+
+    /**
+     * Grid rows per page (the search() pagination in Yii).
+     */
+    protected function pageSize(): int
+    {
+        return config('legacy.pageSize');
     }
 
     /**
@@ -142,6 +153,14 @@ abstract class CrudController extends Controller
     protected function saved(LegacyModel $record): void
     {
         //
+    }
+
+    /**
+     * Where a successful create or update goes (the admin grid).
+     */
+    protected function afterSave(LegacyModel $record): RedirectResponse
+    {
+        return redirect()->route($this->route.'.admin');
     }
 
     /**

@@ -1,5 +1,9 @@
 @extends('crud.admin')
 
+@section('tools')
+    <a href="{{ route('report.allserviceprint') }}" target="_blank" class="btn btn-sm btn-info" title="Print"><i class="fa fa-print"></i> PRINT</a>
+@endsection
+
 @section('grid')
     <x-grid id="service-grid" route="service" :grid="$grid" :columns="[
         ['name' => 'parent', 'value' => fn ($row) => $row->parentRow?->title, 'filter' => $parents],

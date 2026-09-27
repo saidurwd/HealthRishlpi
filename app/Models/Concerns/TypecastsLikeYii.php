@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Schema;
  *   - NOT NULL integer/boolean column  => 0
  *   - text, enum and date columns keep '' (MySQL non-strict mode turns ''
  *     into a zero date, as it did under Yii)
+ *
+ * On insert Yii also left out NULL values of NOT NULL columns
+ * (CDbCommandBuilder::createInsertCommand()), so MySQL filled in the
+ * column default (0 for a NOT NULL int without one). Service invoice lines
+ * rely on this: their `item` is stored as 0.
  */
 trait TypecastsLikeYii
 {
@@ -22,6 +27,21 @@ trait TypecastsLikeYii
         static::saving(function (self $model) {
             $model->typecastEmptyStrings();
         });
+
+        static::creating(function (self $model) {
+            $model->dropNullsOfNotNullColumns();
+        });
+    }
+
+    protected function dropNullsOfNotNullColumns(): void
+    {
+        $columns = $this->yiiColumnTypes();
+
+        foreach ($this->attributes as $attribute => $value) {
+            if ($value === null && isset($columns[$attribute]) && ! $columns[$attribute]['nullable']) {
+                unset($this->attributes[$attribute]);
+            }
+        }
     }
 
     protected function typecastEmptyStrings(): void

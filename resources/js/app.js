@@ -3,6 +3,8 @@ import 'admin-lte';
 import { OverlayScrollbars } from 'overlayscrollbars';
 import Grid from './grid';
 import './searchable';
+import './chained';
+import './line-form';
 
 window.bootstrap = bootstrap;
 window.Grid = Grid;

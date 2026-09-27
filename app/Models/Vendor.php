@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Support\HtmlString;
 
 /**
  * Supplier (`os_vendor`).
@@ -26,5 +27,20 @@ class Vendor extends LegacyModel
             'mobile' => ['max:100'],
             'address' => ['max:255'],
         ];
+    }
+
+    /**
+     * Name, address and contacts for printed documents (Vendor::get_address_details()).
+     */
+    public function addressDetails(): HtmlString
+    {
+        $html = $this->title ? '<h4>'.e($this->title).'</h4>' : '';
+        $html .= '<address>';
+        $html .= $this->address ? e($this->address).'<br>' : '';
+        $html .= $this->email ? '<abbr title="Email">E: </abbr>'.e($this->email).'<br>' : '';
+        $html .= $this->phone ? '<abbr title="Phone">P: </abbr>'.e($this->phone).'<br>' : '';
+        $html .= $this->mobile ? '<abbr title="Mobile">M: </abbr>'.e($this->mobile).'<br>' : '';
+
+        return new HtmlString($html.'</address>');
     }
 }
