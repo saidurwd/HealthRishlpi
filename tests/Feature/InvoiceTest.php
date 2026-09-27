@@ -8,6 +8,7 @@ use App\Models\InvoiceParent;
 use App\Models\Patient;
 use App\Models\PatientCategory;
 use App\Models\PatientCategoryNew;
+use App\Models\PatientPrescription;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Service;
@@ -189,5 +190,93 @@ class InvoiceTest extends TestCase
         // Only super users may roll back
         $this->actingAs($this->makeUser(['username' => 'clerk', 'email' => 'clerk@example.com']));
         $this->get("/invoice/rollback/$parent->id")->assertRedirect('/invoice/admin')->assertSessionHas('error');
+    }
+
+    public function test_the_screen_loads_without_embedding_every_patient_and_product(): void
+    {
+        Patient::factory()->count(3)->create();
+
+        $page = $this->get('/invoice/create')->assertOk()->assertSee('invoice-workspace');
+
+        // Only the chosen patient travels with the page; the rest is searched
+        $this->assertStringNotContainsString('Rahim', $page->getContent());
+        $this->assertLessThan(100 * 1024, strlen($page->getContent()));
+    }
+
+    public function test_lines_endpoint_returns_drafts_or_an_invoices_lines_with_totals(): void
+    {
+        $this->addMedicine()->assertOk();
+
+        $this->getJson('/invoice/lines')->assertOk()
+            ->assertJsonPath('lines.0.title', 'Napa')
+            ->assertJsonPath('lines.0.quantity', '4')
+            ->assertJsonPath('lines.0.batch', 'LOT-1')
+            ->assertJsonPath('totals.count', 1)
+            ->assertJsonPath('totals.gross', '৳20.00')
+            ->assertJsonPath('totals.discount', '৳2.00')
+            ->assertJsonPath('totals.amount', '৳18.00');
+
+        // Another user's drafts are not mine
+        $this->actingAs($this->makeUser(['username' => 'other', 'email' => 'other@example.com']));
+        $this->getJson('/invoice/lines')->assertOk()->assertJsonPath('totals.count', 0);
+    }
+
+    public function test_patient_search_by_name_pat_id_or_mobile(): void
+    {
+        $this->patient->forceFill(['pat_id' => 'PAT#2026-SEP-77', 'mobile' => '01711000000', 'sex' => 'Male', 'age' => 30])->save();
+
+        foreach (['rahi', '2026-SEP-77', '017110'] as $term) {
+            $this->getJson('/invoice/patients?q='.urlencode($term))->assertOk()
+                ->assertJsonPath('0.id', $this->patient->id)
+                ->assertJsonPath('0.text', 'Rahim [PAT#2026-SEP-77]');
+        }
+
+        $this->getJson('/invoice/patients?q=nobody')->assertOk()->assertExactJson([]);
+    }
+
+    public function test_product_search_and_stock_show_what_is_free_to_sell(): void
+    {
+        // 3 of the 10 on hand are held by a draft line
+        $this->addMedicine(['quantity' => '3'])->assertOk();
+
+        $this->getJson('/invoice/items?q=nap')->assertOk()
+            ->assertJsonPath('0.text', 'Napa [pcs]')
+            ->assertJsonPath('0.free', 7);
+
+        $this->getJson('/invoice/stock?item='.$this->product->id)->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.store_name', 'Pharmacy')
+            ->assertJsonPath('0.batch_title', 'LOT-1')
+            ->assertJsonPath('0.expired', false)
+            ->assertJsonPath('0.free', 7)
+            ->assertJsonPath('0.rate', 5);
+    }
+
+    public function test_prescriptions_of_the_chosen_patient(): void
+    {
+        $prescription = PatientPrescription::query()->create([]);
+        $prescription->forceFill(['patient' => $this->patient->id, 'pre_number' => 'PRE#T-2026-1', 'created_on' => now()])->save();
+
+        $this->getJson('/invoice/prescriptions?patient='.$this->patient->id)->assertOk()
+            ->assertJsonPath('0.id', $prescription->id)
+            ->assertJsonPath('0.text', fn ($text) => str_starts_with($text, 'PRE#T-2026-1'));
+    }
+
+    public function test_the_list_filters_by_patient_name(): void
+    {
+        $this->addMedicine()->assertOk();
+        $this->post('/invoice/create', ['patient' => $this->patient->id, 'payment_status' => 'Paid'])->assertRedirect();
+        $number = InvoiceParent::query()->value('invoice_number');
+
+        $this->get('/invoice/admin?InvoiceParent[patient]=rahi')->assertOk()->assertSee($number);
+        $this->get('/invoice/admin?InvoiceParent[patient]=nobody')->assertOk()->assertDontSee($number);
+    }
+
+    public function test_the_lookups_need_their_permissions(): void
+    {
+        $user = $this->makeUser(['group_id' => 4, 'username' => 'desk', 'email' => 'desk@example.com']);
+        $this->group(4)->revokePermissionTo('invoice.items');
+
+        $this->actingAs($user)->get('/invoice/items?q=nap')->assertRedirect('/site/noaccess');
     }
 }

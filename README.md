@@ -84,6 +84,27 @@ Sign-ins stay in the Audit Trail and page views in Visitor Statistics.
 - Stock summary changes are one atomic `INSERT ... ON DUPLICATE KEY UPDATE
   quantity = quantity + ?`, so simultaneous approvals add up.
 
+## Invoice screen
+
+Create, edit, restore and special edit share one screen
+(`invoice/workspace.blade.php`, `resources/js/invoice.js`):
+
+- Patients (name, PAT# or mobile), products and prescriptions are searched on
+  demand instead of shipping every patient, prescription and stock row in the
+  page. The page went from 4.3 MB / 1 s to about 55 KB / 0.1 s.
+- Choosing a product lists its stores and batches with expiry, free quantity
+  and rate, suggesting the in-date batch that expires first. Expired batches
+  are marked but can still be chosen, as before.
+- Lines are added, changed and removed without reloading the page: only the
+  lines are fetched again (under 1 KB instead of the whole page).
+- Saving still posts the form to the same actions, so numbering, totals,
+  approval and stock issue work as before (the invoice tests are unchanged).
+  The JSON endpoints (`invoice.lines/patients/prescriptions/items/stock`) came
+  with migration 000008, granted to every group that can create or edit
+  invoices.
+- The invoice list filters patients by name or PAT# (text box) instead of a
+  dropdown of every patient, and status badges no longer query per row.
+
 ## Porting conventions
 
 A Gii-style admin/create/update/delete module is a `CrudController`

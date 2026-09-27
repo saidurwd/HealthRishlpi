@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\HtmlString;
 
 /**
@@ -52,7 +53,11 @@ class TransectionStatus extends LegacyModel
      */
     public static function badge(?int $statusId, int $type): ?HtmlString
     {
-        $title = static::query()->where('status_id', $statusId)->where('transection_type', $type)->value('status_title');
+        // Looked up once per request and type (grids call this for every row)
+        $titles = Cache::store('array')->rememberForever("transection_status.$type", fn () => static::query()
+            ->where('transection_type', $type)->orderBy('id')->get(['status_id', 'status_title'])
+            ->unique('status_id')->pluck('status_title', 'status_id')->all());
+        $title = $statusId === null ? null : ($titles[$statusId] ?? null);
 
         if ($title === null || $title === '') {
             return null;

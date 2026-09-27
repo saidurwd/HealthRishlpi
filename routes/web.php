@@ -142,6 +142,12 @@ Route::middleware(['auth', 'route.permission'])->group(function () {
         Route::match(['get', 'post'], 'update/{id}', 'update')->name('update')->whereNumber('id');
         Route::match(['get', 'post'], 'rollback/{id}', 'rollback')->name('rollback')->whereNumber('id');
         Route::match(['get', 'post'], 'edit/{id}', 'edit')->name('edit')->whereNumber('id');
+        // JSON for the invoice screen
+        Route::get('lines', 'lines')->name('lines');
+        Route::get('patients', 'patients')->name('patients');
+        Route::get('prescriptions', 'prescriptions')->name('prescriptions');
+        Route::get('items', 'items')->name('items');
+        Route::get('stock', 'stock')->name('stock');
         Route::post('add', 'add')->name('add');
         Route::post('adjustment', 'adjustment')->name('adjustment');
         Route::post('adjustmentEdit', 'adjustmentEdit')->name('adjustmentEdit');

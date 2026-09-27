@@ -5,6 +5,7 @@ import Grid from './grid';
 import './searchable';
 import './chained';
 import './line-form';
+import './invoice';
 
 window.bootstrap = bootstrap;
 window.Grid = Grid;

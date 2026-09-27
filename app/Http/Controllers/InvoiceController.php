@@ -15,7 +15,10 @@ use App\Models\User;
 use App\Support\DocumentNumber;
 use App\Support\Grid;
 use App\Support\Stock;
+use App\Support\YiiFormat;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -39,7 +42,6 @@ class InvoiceController extends Controller
 
         return view('invoice.admin', [
             'grid' => $grid,
-            'patients' => Patient::query()->orderBy('name')->get(['id', 'name', 'pat_id'])->mapWithKeys(fn ($p) => [$p->id => $p->name.' ['.$p->pat_id.']']),
             'users' => User::query()->orderBy('full_name')->pluck('full_name', 'id'),
             'statuses' => TransectionStatus::options(TransectionStatus::INVOICE, userViewOnly: true),
         ]);
@@ -55,7 +57,13 @@ class InvoiceController extends Controller
 
     public function view(int $id): View
     {
-        return view('invoice.view', ['parent' => $this->find($id), 'lines' => $this->linesGrid($id)]);
+        $parent = $this->find($id)->load('patient0', 'invoiceBy');
+
+        return view('invoice.view', [
+            'parent' => $parent,
+            'payload' => self::linesPayload(Invoice::query()->where('parent', $id)->with('item0.unit0', 'service0', 'store0', 'batch0')->orderBy('id')->get()),
+            'prescription' => $parent->prescription ? PatientPrescription::query()->find($parent->prescription) : null,
+        ]);
     }
 
     public function print(int $id): View
@@ -101,10 +109,7 @@ class InvoiceController extends Controller
             return redirect()->route('invoice.update', $parent->id)->with('success', 'Invoice was CREATED successfully.');
         }
 
-        return view('invoice.create', array_merge($this->formData(), [
-            'parent' => $parent,
-            'lines' => Grid::for($this->drafts($request)->with('item0.unit0', 'service0', 'store0', 'batch0'))->compare('id')->paginate(config('legacy.pageSize100')),
-        ]));
+        return $this->workspace($request, $parent, 'create');
     }
 
     public function update(Request $request, int $id): View|RedirectResponse
@@ -152,7 +157,7 @@ class InvoiceController extends Controller
             return redirect()->route('invoice.admin')->with('success', 'Invoice was UPDATED successfully.');
         }
 
-        return view('invoice.edit', array_merge($this->formData(), ['parent' => $parent, 'lines' => $this->linesGrid($id)]));
+        return $this->workspace($request, $parent, 'edit');
     }
 
     /**
@@ -274,6 +279,76 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Lines of an invoice, or the user's draft lines (no parent), with
+     * totals (JSON for the invoice screen).
+     */
+    public function lines(Request $request): JsonResponse
+    {
+        $parent = (int) $request->query('parent', 0);
+        $query = $parent > 0 ? Invoice::query()->where('parent', $parent) : $this->drafts($request);
+
+        return response()->json(self::linesPayload($query->with('item0.unit0', 'service0', 'store0', 'batch0')->orderBy('id')->get()));
+    }
+
+    /**
+     * Patient search: name, PAT# or mobile (newest patients first).
+     */
+    public function patients(Request $request): JsonResponse
+    {
+        $term = trim((string) $request->query('q', ''));
+
+        $patients = Patient::query()
+            ->when($term !== '', fn ($query) => $query->where(fn ($q) => $q
+                ->where('name', 'like', "%$term%")
+                ->orWhere('pat_id', 'like', "%$term%")
+                ->orWhere('mobile', 'like', "%$term%")
+                ->when(ctype_digit($term), fn ($q) => $q->orWhere('id', (int) $term))))
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get(['id', 'name', 'pat_id', 'mobile', 'sex', 'age', 'age_type', 'birth_date']);
+
+        return response()->json($patients->map(fn (Patient $patient) => self::patientOption($patient))->all());
+    }
+
+    /**
+     * A patient's prescriptions, newest first.
+     */
+    public function prescriptions(Request $request): JsonResponse
+    {
+        return response()->json(self::prescriptionOptions((int) $request->query('patient', 0)));
+    }
+
+    /**
+     * Product search with the quantity free to invoice.
+     */
+    public function items(Request $request): JsonResponse
+    {
+        $term = trim((string) $request->query('q', ''));
+        $products = DB::table('product as p')
+            ->leftJoin('unit as u', 'u.id', '=', 'p.unit')
+            ->when($term !== '', fn ($query) => $query->where('p.title', 'like', "%$term%"))
+            ->orderBy('p.title')
+            ->limit(30)
+            ->get(['p.id', 'p.title', 'u.formal_name']);
+        $free = Stock::freeQuantities($products->pluck('id')->map(fn ($id) => (int) $id)->all());
+
+        return response()->json($products->map(fn ($product) => [
+            'id' => (int) $product->id,
+            'text' => $product->title.' ['.($product->formal_name ?: 'N/A').']',
+            'unit' => $product->formal_name ?: 'N/A',
+            'free' => $free[(int) $product->id] ?? 0,
+        ])->all());
+    }
+
+    /**
+     * Stores and batches an item can be invoiced from.
+     */
+    public function stock(Request $request): JsonResponse
+    {
+        return response()->json(Stock::itemBatches((int) $request->query('item', 0)));
+    }
+
+    /**
      * Update / rollback: save the header with the recomputed total; on
      * approval issue every medicine line from stock.
      */
@@ -297,7 +372,7 @@ class InvoiceController extends Controller
             return redirect()->route('invoice.admin')->with('success', 'Invoice was UPDATED successfully.');
         }
 
-        return view($view, array_merge($this->formData(), ['parent' => $parent, 'lines' => $this->linesGrid($parent->id)]));
+        return $this->workspace($request, $parent, $view === 'invoice.rollback' ? 'rollback' : 'update');
     }
 
     private function adjustedLine(Request $request): Invoice
@@ -369,7 +444,10 @@ class InvoiceController extends Controller
     {
         return Grid::for($query->withCount('lines')->with('patient0', 'invoiceBy'))
             ->compare('id')
-            ->compare('patient')
+            // Name or PAT# (a dropdown of every patient made the page megabytes big)
+            ->filter('patient', fn ($query, $value) => $query->where(fn ($q) => $q
+                ->whereIn('patient', Patient::query()->select('id')->where('name', 'like', "%$value%")->orWhere('pat_id', 'like', "%$value%"))
+                ->when(ctype_digit($value), fn ($q) => $q->orWhere('patient', (int) $value))))
             ->compare('prescription')
             ->compare('invoice_date', partial: true)
             ->compare('invoice_number', partial: true)
@@ -387,31 +465,97 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Options of the line and header forms.
-     *
-     * @return array<string, mixed>
+     * The invoice screen. $mode: create, update, rollback (lines can be
+     * added and removed) or edit (special edit of an approved invoice:
+     * quantity changes move stock at once).
      */
-    private function formData(): array
+    private function workspace(Request $request, InvoiceParent $parent, string $mode): View
     {
-        $services = Service::query()->orderBy('ordering')->orderBy('path')->get(['id', 'parent', 'title', 'rate_status']);
+        $services = Service::query()->orderBy('ordering')->orderBy('path')->get(['id', 'parent', 'title', 'rate', 'rate_status', 'discount']);
         $children = $services->where('parent', '>', 0)->groupBy('parent');
+        $patientId = (int) ($request->old('patient') ?? $parent->patient);
+        $patient = $patientId > 0 ? Patient::query()->find($patientId) : null;
+        $lines = $mode === 'create' ? $this->drafts($request) : Invoice::query()->where('parent', $parent->id);
+
+        return view('invoice.workspace', [
+            'mode' => $mode,
+            'parent' => $parent,
+            'patient' => $patient ? self::patientOption($patient) : null,
+            'prescriptions' => self::prescriptionOptions($patientId),
+            // Top-level services are groups of their children (Service::getServiceCategory())
+            'services' => $services->filter(fn ($s) => (int) $s->parent === 0)
+                ->map(fn ($root) => ['group' => $root->title, 'options' => ($children[$root->id] ?? collect())->map(fn ($s) => [
+                    'id' => $s->id, 'title' => $s->title, 'rate' => (float) $s->rate, 'manual' => $s->rate_status === 'Manual',
+                ])->values()->all()])
+                ->filter(fn ($group) => $group['options'] !== [])->values()->all(),
+            'statuses' => TransectionStatus::options(TransectionStatus::INVOICE),
+            'categoriesNew' => in_array($mode, ['update', 'rollback', 'edit'], true) ? PatientController::twoLevelOptions(PatientCategoryNew::class) : [],
+            'categories' => in_array($mode, ['update', 'rollback', 'edit'], true) ? PatientController::twoLevelOptions(PatientCategory::class) : [],
+            'initialLines' => self::linesPayload($lines->with('item0.unit0', 'service0', 'store0', 'batch0')->orderBy('id')->get()),
+            'medicineDiscount' => (int) config('legacy.discountMedicine'),
+        ]);
+    }
+
+    /**
+     * @param  Collection<int, Invoice>  $lines
+     * @return array{lines: list<array<string, mixed>>, totals: array<string, mixed>}
+     */
+    private static function linesPayload(Collection $lines): array
+    {
+        $gross = $lines->sum(fn (Invoice $line) => (float) $line->quantity * (float) $line->rate);
+        $discount = $lines->sum(fn (Invoice $line) => (float) $line->discount);
+        $amount = $lines->sum(fn (Invoice $line) => (float) $line->amount);
 
         return [
-            // Top-level services are optgroups of their children (Service::getServiceCategory())
-            'services' => $services->filter(fn ($s) => (int) $s->parent === 0)
-                ->mapWithKeys(fn ($root) => [$root->title => ($children[$root->id] ?? collect())->pluck('title', 'id')->all()])
-                ->all(),
-            'manualServices' => $services->where('rate_status', 'Manual')->pluck('id')->all(),
-            'items' => Stock::itemOptions(),
-            'stores' => Stock::storeOptions(),
-            'batches' => array_map(fn ($b) => $b + ['style' => 'color:'.($b['expired'] ? 'red' : 'green').';'], Stock::batchOptions()),
-            'patients' => Patient::query()->orderByDesc('id')->get(['id', 'name', 'pat_id'])->mapWithKeys(fn ($p) => [$p->id => $p->name.' ['.$p->pat_id.']']),
-            'prescriptions' => PatientPrescription::query()->orderByDesc('created_on')->get(['id', 'patient', 'pre_number'])
-                ->map(fn ($p) => ['value' => $p->id, 'label' => (string) $p->pre_number, 'chain' => (string) $p->patient])->all(),
-            'statuses' => TransectionStatus::options(TransectionStatus::INVOICE),
-            'categoriesNew' => PatientController::twoLevelOptions(PatientCategoryNew::class),
-            'categories' => PatientController::twoLevelOptions(PatientCategory::class),
+            'lines' => $lines->map(fn (Invoice $line) => [
+                'id' => $line->id,
+                'type' => $line->servicetype,
+                'title' => $line->title(),
+                'store' => $line->store0?->title,
+                'batch' => $line->batch0?->title,
+                'expiry' => $line->batch0?->expiry,
+                'quantity' => rtrim(rtrim(number_format((float) $line->quantity, 6, '.', ''), '0'), '.'),
+                'uom' => $line->uom(),
+                'rate' => YiiFormat::currency($line->rate),
+                'discount' => YiiFormat::currency($line->discount),
+                'amount' => YiiFormat::currency($line->amount),
+                'note' => $line->note,
+            ])->values()->all(),
+            'totals' => [
+                'count' => $lines->count(),
+                'gross' => YiiFormat::currency($gross),
+                'discount' => YiiFormat::currency($discount),
+                'amount' => YiiFormat::currency($amount),
+            ],
         ];
+    }
+
+    /**
+     * @return array{id: int, text: string, pat_id: ?string, detail: string}
+     */
+    private static function patientOption(Patient $patient): array
+    {
+        return [
+            'id' => $patient->id,
+            'text' => $patient->name.' ['.$patient->pat_id.']',
+            'pat_id' => $patient->pat_id,
+            'detail' => collect([$patient->sex, trim($patient->ageText()), $patient->mobile])->filter()->implode(' · '),
+        ];
+    }
+
+    /**
+     * @return list<array{id: int, text: string}>
+     */
+    private static function prescriptionOptions(int $patientId): array
+    {
+        if ($patientId <= 0) {
+            return [];
+        }
+
+        return PatientPrescription::query()->where('patient', $patientId)->orderByDesc('created_on')->orderByDesc('id')
+            ->get(['id', 'pre_number', 'created_on'])
+            ->map(fn ($p) => ['id' => $p->id, 'text' => $p->pre_number.' ('.YiiFormat::date($p->created_on).')'])
+            ->values()->all();
     }
 
     /**

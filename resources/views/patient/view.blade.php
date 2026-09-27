@@ -76,7 +76,7 @@
                     ]" />
                 </div>
                 <div class="tab-pane fade" id="TAB3">
-                    @include('invoice._grid', ['grid' => $invoices, 'patients' => [$record->id => $record->name], 'statuses' => $invoiceStatuses])
+                    @include('invoice._grid', ['grid' => $invoices, 'statuses' => $invoiceStatuses])
                 </div>
             </div>
         </div>

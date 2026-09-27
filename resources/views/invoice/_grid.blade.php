@@ -1,12 +1,13 @@
 {{--
     Invoice header grid: the Invoice manage page ($admin = true) and the
-    Invoices tab of a patient's page. Needs $grid, $patients, $users, $statuses.
+    Invoices tab of a patient's page. Needs $grid, $users, $statuses. The
+    patient filter takes a name or PAT#.
 --}}
 @php $admin ??= false; @endphp
 <x-grid id="invoice-parent-grid" :grid="$grid" :columns="array_values(array_filter([
     ['name' => 'patient', 'value' => fn ($row) => $admin
         ? '<a href=\''.e(route('patient.view', (int) $row->patient)).'\' target=\'_blank\'>'.e($row->patient0?->name).'</a>'
-        : e($row->patient0?->name), 'raw' => true, 'filter' => $patients],
+        : e($row->patient0?->name), 'raw' => true],
     ['name' => 'invoice_number', 'value' => fn ($row) => '<a href=\''.e(route('invoice.view', $row->id)).'\''.($admin ? '' : ' target=\'_blank\'').'>'.e($row->invoice_number).'</a>', 'raw' => true],
     ['name' => 'invoice_date', 'value' => fn ($row) => \App\Support\YiiFormat::date($row->invoice_date)],
     ['header' => '# of Items', 'value' => fn ($row) => $row->lines_count, 'class' => 'text-center'],

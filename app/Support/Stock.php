@@ -151,6 +151,94 @@ class Stock
     }
 
     /**
+     * Stock of one item per store and batch, for the invoice screen: on hand
+     * (rows with quantity > 0, as in batchOptions()), free = on hand minus
+     * draft and pending invoice lines (the quantity checkAvailability()
+     * allows), expiry and the sale rate.
+     *
+     * @return list<array{store: int, store_name: string, batch: int, batch_title: string, expiry: ?string, expired: bool, on_hand: float, free: float, rate: float}>
+     */
+    public static function itemBatches(int $item): array
+    {
+        $onHand = DB::table('stock_summary as s')
+            ->leftJoin('store as st', 'st.id', '=', 's.store')
+            ->leftJoin('batch as b', 'b.id', '=', 's.batch')
+            ->where('s.item', $item)->where('s.quantity', '>', 0)
+            ->groupBy('s.store', 's.batch', 'st.alias', 'st.title', 'b.title', 'b.expiry')
+            ->orderBy('b.expiry')
+            ->select(['s.store', 's.batch', 'st.alias as store_alias', 'st.title as store_title', 'b.title as batch_title', 'b.expiry'])
+            ->selectRaw('SUM('.self::column('s.quantity').') AS quantity')
+            ->get();
+        $held = self::heldQuantities([$item], perBatch: true);
+
+        return $onHand->map(function ($row) use ($item, $held) {
+            $free = (float) $row->quantity - ($held[$item.'|'.$row->store.'|'.$row->batch] ?? 0);
+            $rate = self::itemRate($item, $row->store, $row->batch);
+
+            return [
+                'store' => (int) $row->store,
+                'store_name' => (string) ($row->store_alias ?: $row->store_title),
+                'batch' => (int) $row->batch,
+                'batch_title' => (string) $row->batch_title,
+                'expiry' => $row->expiry,
+                'expired' => ! ($row->expiry !== null && strtotime($row->expiry) > time() - 86400),
+                'on_hand' => (float) $row->quantity,
+                'free' => round($free, 6),
+                'rate' => (float) ($rate === false ? 0 : $rate),
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Free quantity per item (all stores and batches) for the given items.
+     *
+     * @param  array<int, int>  $items
+     * @return array<int, float>
+     */
+    public static function freeQuantities(array $items): array
+    {
+        if ($items === []) {
+            return [];
+        }
+
+        $onHand = DB::table('stock_summary')->whereIn('item', $items)->where('quantity', '>', 0)
+            ->groupBy('item')->selectRaw('item, SUM(quantity) AS quantity')->pluck('quantity', 'item');
+        $held = self::heldQuantities($items, perBatch: false);
+
+        return collect($items)->mapWithKeys(fn ($item) => [$item => round((float) ($onHand[$item] ?? 0) - ($held[$item] ?? 0), 6)])->all();
+    }
+
+    /**
+     * Quantities held by draft lines (no invoice yet) and pending invoices
+     * (qtyPendingBatch()), keyed "item" or "item|store|batch" (PHP turns
+     * the numeric "item" keys into integers).
+     *
+     * @param  array<int, int>  $items
+     * @return array<int|string, float>
+     */
+    private static function heldQuantities(array $items, bool $perBatch): array
+    {
+        $keys = $perBatch ? ['i.item', 'i.store', 'i.batch'] : ['i.item'];
+        $held = DB::table('invoice as i')
+            ->leftJoin('invoice_parent as p', 'p.id', '=', 'i.parent')
+            ->whereIn('i.item', $items)
+            ->where(fn ($query) => $query->whereNull('i.parent')->orWhere('i.parent', 0)->orWhere('p.status', 0))
+            ->groupBy($keys)
+            ->select($keys)->selectRaw('SUM('.self::column('i.quantity').') AS quantity')
+            ->get();
+
+        return $held->mapWithKeys(fn ($row) => [($perBatch ? $row->item.'|'.$row->store.'|'.$row->batch : (string) $row->item) => (float) $row->quantity])->all();
+    }
+
+    /**
+     * Wrapped (prefixed) column for raw SQL.
+     */
+    private static function column(string $column): string
+    {
+        return DB::getQueryGrammar()->wrap($column);
+    }
+
+    /**
      * Forget the store/batch option lists (done whenever stock changes).
      */
     public static function forgetOptionCaches(): void

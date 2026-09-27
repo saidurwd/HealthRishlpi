@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -113,6 +114,27 @@ class Grid
         }
 
         $query->where($column, $op, $value);
+    }
+
+    /**
+     * A filter that is not a plain column comparison: $apply gets the query
+     * and the typed value (only when one was typed). The attribute sorts by
+     * $sortColumn when given.
+     *
+     * @param  Closure(Builder<Model>, string): mixed  $apply  its return value is ignored
+     */
+    public function filter(string $attribute, Closure $apply, ?string $sortColumn = null): self
+    {
+        $value = trim((string) ($this->filters[$attribute] ?? ''));
+        if ($value !== '') {
+            $apply($this->query, $value);
+        }
+
+        if ($sortColumn !== null) {
+            $this->sortable($attribute, $sortColumn);
+        }
+
+        return $this;
     }
 
     /**
