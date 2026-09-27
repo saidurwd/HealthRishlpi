@@ -30,15 +30,8 @@ abstract class TestCase extends BaseTestCase
             $this->group($attributes['group_id']);
         }
 
-        $user = new User;
-        $user->forceFill(array_merge([
-            'full_name' => 'Test User',
-            'username' => 'tester',
-            'email' => 'tester@example.com',
-            'password' => User::hashPassword($password),
-            'status' => 1,
-            'photo' => '',
-        ], $attributes))->save();
+        $user = User::factory()->password($password)->make(['full_name' => 'Test User', 'username' => 'tester', 'email' => 'tester@example.com']);
+        $user->forceFill($attributes)->save();
 
         return $user;
     }

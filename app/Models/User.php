@@ -5,9 +5,11 @@ namespace App\Models;
 use App\Models\Concerns\HasAttributeLabels;
 use App\Models\Concerns\TypecastsLikeYii;
 use App\Rules\YiiEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Validation\Rule;
@@ -44,7 +46,8 @@ use Spatie\Permission\Traits\HasRoles;
 #[Hidden(['password'])]
 class User extends Authenticatable
 {
-    use HasAttributeLabels, HasRoles, TypecastsLikeYii;
+    /** @use HasFactory<UserFactory> */
+    use HasAttributeLabels, HasFactory, HasRoles, TypecastsLikeYii;
 
     // Values of os_user.status that block login (UserIdentity::ERROR_STATUS_*)
     public const STATUS_NOT_ACTIVE = 2;

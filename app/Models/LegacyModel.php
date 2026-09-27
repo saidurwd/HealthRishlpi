@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasAttributeLabels;
 use App\Models\Concerns\TypecastsLikeYii;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -19,7 +20,7 @@ abstract class LegacyModel extends Model
     // Options of the Active/Inactive `status` enum most lookup tables have
     public const STATUSES = ['Active' => 'Active', 'Inactive' => 'Inactive'];
 
-    use HasAttributeLabels, TypecastsLikeYii;
+    use HasAttributeLabels, HasFactory, TypecastsLikeYii;
 
     /**
      * Validation rules for a create (null) or an update of $model. Every

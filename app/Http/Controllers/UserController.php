@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\File;
 use Illuminate\View\View;
 
 /**
@@ -172,6 +173,7 @@ class UserController extends Controller
             $scale = min(400 / imagesx($image), 100 / imagesy($image));
             $thumb = imagescale($image, max(1, (int) round(imagesx($image) * $scale)), max(1, (int) round(imagesy($image) * $scale)));
             $target = public_path('uploads/user/thumb/'.$name);
+            File::ensureDirectoryExists(dirname($target));
 
             match (strtolower(pathinfo($name, PATHINFO_EXTENSION))) {
                 'png' => imagepng($thumb, $target),
