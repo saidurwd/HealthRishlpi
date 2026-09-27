@@ -6,6 +6,7 @@ import './searchable';
 import './chained';
 import './line-form';
 import './invoice';
+import './prescription';
 
 window.bootstrap = bootstrap;
 window.Grid = Grid;

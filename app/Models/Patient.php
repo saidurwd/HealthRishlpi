@@ -213,6 +213,25 @@ class Patient extends LegacyModel
     }
 
     /**
+     * Compact age for lists: "34 y", "3 y 2 m", "7 m", "12 d".
+     */
+    public function ageShort(): string
+    {
+        if (! $this->hasBirthDate()) {
+            return $this->age === null ? '' : $this->age.' '.($this->age_type === 'Month' ? 'm' : 'y');
+        }
+
+        $diff = (new DateTime)->diff(new DateTime((string) $this->birth_date));
+
+        return match (true) {
+            $diff->y >= 5 => $diff->y.' y',
+            $diff->y > 0 => $diff->y.' y'.($diff->m > 0 ? ' '.$diff->m.' m' : ''),
+            $diff->m > 0 => $diff->m.' m',
+            default => $diff->d.' d',
+        };
+    }
+
+    /**
      * Address followed by thana and district (Patient::getPatiantAddress()).
      */
     public function fullAddress(): string

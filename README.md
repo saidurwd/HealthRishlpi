@@ -105,6 +105,24 @@ Create, edit, restore and special edit share one screen
 - The invoice list filters patients by name or PAT# (text box) instead of a
   dropdown of every patient, and status badges no longer query per row.
 
+## Patient screens
+
+- The list shows one compact row per patient (name, PAT#, mobile, sex,
+  short age, category, registration date) with quick actions: open, new
+  prescription, new invoice, edit. The Patient box searches name, PAT#,
+  mobile and national ID.
+- The patient page has a profile header, visit totals (prescriptions,
+  invoices, approved billing, last visit), actions (new invoice with the
+  patient chosen, new prescription, edit, printouts) and tabs for
+  prescriptions, invoices and grouped details.
+- The registration form shows every section at once with the key fields
+  first; saving opens the patient's page. The age unit (Years/Months)
+  selector had never rendered in this port; it does now.
+- The prescription screen works like the invoice screen: medicines are
+  searched on demand (with stock shown) and added or removed without
+  reloading (`patient.medicines`/`patient.products`, migration 000009);
+  the clinical notes sit beside them. Saving and numbering are unchanged.
+
 ## Porting conventions
 
 A Gii-style admin/create/update/delete module is a `CrudController`

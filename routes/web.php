@@ -129,6 +129,9 @@ Route::middleware(['auth', 'route.permission'])->group(function () {
         Route::match(['get', 'post'], 'newprescription/{id}', 'newprescription')->name('newprescription')->whereNumber('id');
         Route::match(['get', 'post'], 'editprescription/{id}', 'editprescription')->name('editprescription')->whereNumber('id');
         Route::post('remove/{id}', 'remove')->name('remove')->whereNumber('id');
+        // JSON for the prescription screen
+        Route::get('medicines', 'medicines')->name('medicines');
+        Route::get('products', 'products')->name('products');
         Route::post('addmedicine', 'addmedicine')->name('addmedicine');
         Route::post('removemedicine/{id}', 'removemedicine')->name('removemedicine')->whereNumber('id');
     });

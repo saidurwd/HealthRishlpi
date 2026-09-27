@@ -151,6 +151,31 @@ class Stock
     }
 
     /**
+     * Product search for the invoice and prescription screens: "Title [unit]"
+     * with the quantity free to invoice.
+     *
+     * @return list<array{id: int, text: string, title: string, unit: string, free: float}>
+     */
+    public static function searchProducts(string $term, int $limit = 30): array
+    {
+        $products = DB::table('product as p')
+            ->leftJoin('unit as u', 'u.id', '=', 'p.unit')
+            ->when($term !== '', fn ($query) => $query->where('p.title', 'like', "%$term%"))
+            ->orderBy('p.title')
+            ->limit($limit)
+            ->get(['p.id', 'p.title', 'u.formal_name']);
+        $free = self::freeQuantities($products->pluck('id')->map(fn ($id) => (int) $id)->all());
+
+        return $products->map(fn ($product) => [
+            'id' => (int) $product->id,
+            'text' => $product->title.' ['.($product->formal_name ?: 'N/A').']',
+            'title' => (string) $product->title,
+            'unit' => $product->formal_name ?: 'N/A',
+            'free' => $free[(int) $product->id] ?? 0,
+        ])->values()->all();
+    }
+
+    /**
      * Stock of one item per store and batch, for the invoice screen: on hand
      * (rows with quantity > 0, as in batchOptions()), free = on hand minus
      * draft and pending invoice lines (the quantity checkAvailability()

@@ -9,12 +9,12 @@
  * Keyboard: "/" searches products, Enter in a quantity adds the line.
  */
 import TomSelect from 'tom-select';
+import { csrfToken, escape, getJson, post, remoteSelect } from './screen';
 
 const root = document.getElementById('invoice-workspace');
 
 if (root) {
     const data = JSON.parse(document.getElementById('invoice-data').textContent);
-    const token = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
     const lineForm = document.getElementById('invoice-line-form');
     const lineError = document.getElementById('line-error');
     const preview = document.getElementById('line-preview');
@@ -22,8 +22,6 @@ if (root) {
     const canAddLines = data.mode !== 'edit';
 
     // ---- helpers ------------------------------------------------------------
-
-    const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
     const money = (value) => {
         const number = Number(value) || 0;
@@ -34,36 +32,6 @@ if (root) {
 
     const quantity = (value) => Number(value).toLocaleString('en-US', { maximumFractionDigits: 6 });
 
-    async function getJson(url, params = {}) {
-        const query = new URLSearchParams(params).toString();
-        const response = await fetch(query ? `${url}?${query}` : url, { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
-
-        if (!response.ok) {
-            throw new Error(response.status === 403 || response.redirected ? 'You are not allowed to do this.' : 'Could not load data. Please try again.');
-        }
-
-        return response.json();
-    }
-
-    async function post(url, body) {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
-            body,
-        });
-
-        if (response.status === 422) {
-            const json = await response.json();
-            throw new Error(Object.values(json.errors ?? {}).flat().join(' ') || json.message);
-        }
-
-        if (!response.ok) {
-            throw new Error('Could not save. Please try again.');
-        }
-
-        return response.text();
-    }
-
     function showError(message) {
         if (!lineError) {
             alert(message);
@@ -72,25 +40,6 @@ if (root) {
         }
         lineError.textContent = message;
         lineError.hidden = !message;
-    }
-
-    // Remote search on a <select>: every result of the latest query is shown
-    function remoteSelect(select, url, options = {}) {
-        return new TomSelect(select, {
-            valueField: 'id',
-            labelField: 'text',
-            searchField: [],
-            maxOptions: 50,
-            loadThrottle: 250,
-            preload: 'focus',
-            dropdownParent: 'body',
-            score: () => () => 1,
-            load(query, callback) {
-                this.clearOptions();
-                getJson(url, { q: query }).then(callback).catch(() => callback());
-            },
-            ...options,
-        });
     }
 
     // ---- lines -------------------------------------------------------------
@@ -345,7 +294,7 @@ if (root) {
             showError('');
 
             const body = new FormData(lineForm);
-            body.set('_token', token);
+            body.set('_token', csrfToken());
 
             if (typeField.value === 'Medicine') {
                 const batch = selectedBatch();

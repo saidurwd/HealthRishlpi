@@ -185,9 +185,17 @@ abstract class CrudController extends Controller
         return $this->model::query()->find($id) ?? abort(404, 'The requested page does not exist.');
     }
 
+    /**
+     * Page around the form fields (crud.create / crud.update).
+     */
+    protected function formView(string $action): string
+    {
+        return 'crud.'.$action;
+    }
+
     private function form(string $action, LegacyModel $record): View
     {
-        return view('crud.'.$action, array_merge([
+        return view($this->formView($action), array_merge([
             'record' => $record,
             'page' => $this->page(),
             'form' => $this->viewPath('_form'),

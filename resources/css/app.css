@@ -9,6 +9,7 @@
 @import './grid.css';
 @import './dashboard.css';
 @import './invoice.css';
+@import './patient.css';
 
 /* Legacy logo is a wide wordmark, not a square badge */
 .sidebar-brand .brand-link .brand-image {

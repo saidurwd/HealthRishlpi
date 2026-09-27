@@ -23,6 +23,7 @@ use App\Support\Grid;
 use App\Support\Stock;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -57,13 +58,19 @@ class PatientController extends CrudController
 
         $grid = Grid::for($query)->compare('id');
 
-        foreach (['pat_id', 'ref_no', 'name', 'age_type', 'sex', 'birth_date', 'blood_groop', 'marital_status', 'email', 'national_id',
+        foreach (['pat_id', 'ref_no', 'age_type', 'sex', 'birth_date', 'blood_groop', 'marital_status', 'email', 'national_id',
             'spouse', 'occupation', 'religion', 'address', 'mobile', 'emergency_name', 'emergency_relation', 'emergency_contact',
             'created_on', 'problem', 'referred', 'guardian_occupation', 'no_of_family_member', 'earning_member', 'earning_source', 'admission'] as $attribute) {
             $grid->compare($attribute, partial: true);
         }
 
         return $grid
+            // One box for name, PAT#, mobile or national ID
+            ->filter('name', fn ($query, $value) => $query->where(fn ($q) => $q
+                ->where('patient.name', 'like', "%$value%")
+                ->orWhere('patient.pat_id', 'like', "%$value%")
+                ->orWhere('patient.mobile', 'like', "%$value%")
+                ->orWhere('patient.national_id', 'like', "%$value%")), sortColumn: 'patient.name')
             ->compare('age')
             ->compare('village')
             ->compare('post')
@@ -82,7 +89,7 @@ class PatientController extends CrudController
 
     public function view(Request $request, int $id): View
     {
-        $patient = $this->find($id);
+        $patient = $this->find($id)->load('category0', 'category_new0', 'thana0', 'district0', 'country0', 'createdBy');
 
         $prescriptions = Grid::for(PatientPrescription::query()->where('patient', $patient->id)->with('diagnosis0'))
             ->compare('id');
@@ -93,6 +100,8 @@ class PatientController extends CrudController
             ->defaultOrder('created_on', 'desc')->defaultOrder('id', 'desc')
             ->paginate(config('legacy.pageSize20'));
 
+        $invoices = InvoiceParent::query()->where('patient', $patient->id)->whereIn('status', [0, 1]);
+
         return view('patient.view', [
             'record' => $patient,
             'prescriptions' => $prescriptions,
@@ -100,6 +109,15 @@ class PatientController extends CrudController
             'diseases' => Disease::query()->orderBy('title')->pluck('title', 'id'),
             'users' => User::query()->orderBy('full_name')->pluck('full_name', 'id'),
             'invoiceStatuses' => TransectionStatus::options(TransectionStatus::INVOICE, userViewOnly: true),
+            'stats' => [
+                'prescriptions' => PatientPrescription::query()->where('patient', $patient->id)->count(),
+                'invoices' => (clone $invoices)->count(),
+                'billed' => (float) (clone $invoices)->where('status', 1)->sum('total_amount'),
+                'last_visit' => collect([
+                    PatientPrescription::query()->where('patient', $patient->id)->max('created_on'),
+                    (clone $invoices)->max('invoice_date'),
+                ])->filter()->max(),
+            ],
         ]);
     }
 
@@ -179,7 +197,7 @@ class PatientController extends CrudController
         if ($request->isMethod('post')) {
             $prescription->fill($this->validatedPrescription($request))->save();
 
-            return redirect()->route('patient.admin')->with('success', 'Data was saved successfully');
+            return redirect()->route('patient.view', (int) $prescription->patient)->with('success', 'Data was saved successfully');
         }
 
         return $this->prescriptionForm($request, $prescription, $this->find((int) $prescription->patient));
@@ -214,6 +232,37 @@ class PatientController extends CrudController
     public function removemedicine(Request $request, int $id): RedirectResponse|Response
     {
         return $this->deleteRecord($request, PrescriptionMedicine::query()->find($id));
+    }
+
+    /**
+     * Medicines of a prescription, or the user's unsaved ones (JSON for the
+     * prescription screen).
+     */
+    public function medicines(Request $request): JsonResponse
+    {
+        return response()->json(self::medicineLines($request, (int) $request->query('parent', 0)));
+    }
+
+    /**
+     * Product search for the prescription screen.
+     */
+    public function products(Request $request): JsonResponse
+    {
+        return response()->json(Stock::searchProducts(trim((string) $request->query('q', ''))));
+    }
+
+    /**
+     * After registering or editing, the patient's page (quick actions for a
+     * prescription or an invoice) rather than the list.
+     */
+    protected function afterSave(LegacyModel $record): RedirectResponse
+    {
+        return redirect()->route('patient.view', $record->id);
+    }
+
+    protected function formView(string $action): string
+    {
+        return 'patient.form';
     }
 
     protected function formData(LegacyModel $record): array
@@ -294,21 +343,34 @@ class PatientController extends CrudController
 
     private function prescriptionForm(Request $request, PatientPrescription $prescription, Patient $patient): View
     {
-        $lines = PrescriptionMedicine::query()
-            ->when(
-                $prescription->exists,
-                fn ($query) => $query->where('parent', $prescription->id),
-                fn ($query) => $query->where(fn ($query) => $query->where('parent', 0)->orWhereNull('parent'))->where('created_by', $request->user()->id),
-            );
-
         return view('patient.prescription-form', [
             'prescription' => $prescription,
             'patient' => $patient,
-            'lines' => Grid::for($lines)->compare('id')->paginate(PHP_INT_MAX),
-            'products' => Stock::itemOptions(),
-            'instructions' => Instruction::query()->where('status', 'Active')->pluck('title', 'title'),
-            'diseases' => Disease::query()->pluck('title', 'id'),
+            'lines' => self::medicineLines($request, $prescription->exists ? $prescription->id : 0),
+            'instructions' => Instruction::query()->where('status', 'Active')->pluck('title')->all(),
+            'diseases' => Disease::query()->orderBy('title')->pluck('title', 'id'),
         ]);
+    }
+
+    /**
+     * @return list<array{id: int, product: ?string, instruction: ?string, days: ?string}>
+     */
+    private static function medicineLines(Request $request, int $prescriptionId): array
+    {
+        return PrescriptionMedicine::query()
+            ->when(
+                $prescriptionId > 0,
+                fn ($query) => $query->where('parent', $prescriptionId),
+                fn ($query) => $query->where(fn ($query) => $query->where('parent', 0)->orWhereNull('parent'))->where('created_by', $request->user()->id),
+            )
+            ->orderBy('id')
+            ->get()
+            ->map(fn (PrescriptionMedicine $line) => [
+                'id' => $line->id,
+                'product' => $line->product,
+                'instruction' => $line->instruction,
+                'days' => $line->no_of_days === null ? null : (string) $line->no_of_days,
+            ])->values()->all();
     }
 
     /**

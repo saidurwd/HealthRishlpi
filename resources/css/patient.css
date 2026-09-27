@@ -1,0 +1,65 @@
+/* Patient pages */
+.patient-avatar {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    background: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.patient-avatar-sm {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.1rem;
+}
+
+.patient-stats .stat-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.patient-stats .stat-label {
+    font-size: 0.8rem;
+    color: var(--bs-secondary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.patient-details > div {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    border-bottom: 1px dashed var(--bs-border-color);
+}
+
+.patient-details dt {
+    font-weight: normal;
+    color: var(--bs-secondary-color);
+}
+
+.patient-details dd {
+    margin: 0;
+    text-align: end;
+}
+
+/* Registration form: the save bar stays in reach */
+.patient-form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    box-shadow: 0 -0.25rem 0.75rem rgb(0 0 0 / 0.06);
+}
+
+/* AdminLTE gives .app-main overflow: auto, but the page scrolls on the body,
+   so sticky panels had nothing to stick to. Pages with them let it overflow
+   (more specific than .sidebar-expand-lg.layout-fixed .app-main). */
+body .app-wrapper .app-main:has(.patient-form-actions, .invoice-sidebar) {
+    overflow: visible;
+}

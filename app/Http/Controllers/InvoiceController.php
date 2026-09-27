@@ -323,21 +323,7 @@ class InvoiceController extends Controller
      */
     public function items(Request $request): JsonResponse
     {
-        $term = trim((string) $request->query('q', ''));
-        $products = DB::table('product as p')
-            ->leftJoin('unit as u', 'u.id', '=', 'p.unit')
-            ->when($term !== '', fn ($query) => $query->where('p.title', 'like', "%$term%"))
-            ->orderBy('p.title')
-            ->limit(30)
-            ->get(['p.id', 'p.title', 'u.formal_name']);
-        $free = Stock::freeQuantities($products->pluck('id')->map(fn ($id) => (int) $id)->all());
-
-        return response()->json($products->map(fn ($product) => [
-            'id' => (int) $product->id,
-            'text' => $product->title.' ['.($product->formal_name ?: 'N/A').']',
-            'unit' => $product->formal_name ?: 'N/A',
-            'free' => $free[(int) $product->id] ?? 0,
-        ])->all());
+        return response()->json(Stock::searchProducts(trim((string) $request->query('q', ''))));
     }
 
     /**
@@ -473,7 +459,8 @@ class InvoiceController extends Controller
     {
         $services = Service::query()->orderBy('ordering')->orderBy('path')->get(['id', 'parent', 'title', 'rate', 'rate_status', 'discount']);
         $children = $services->where('parent', '>', 0)->groupBy('parent');
-        $patientId = (int) ($request->old('patient') ?? $parent->patient);
+        // "New invoice" on a patient's page opens with the patient chosen
+        $patientId = (int) ($request->old('patient') ?? $parent->patient ?? $request->query('patient'));
         $patient = $patientId > 0 ? Patient::query()->find($patientId) : null;
         $lines = $mode === 'create' ? $this->drafts($request) : Invoice::query()->where('parent', $parent->id);
 
