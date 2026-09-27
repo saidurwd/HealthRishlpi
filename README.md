@@ -42,6 +42,7 @@ pending migrations. Rehearse new migrations on a copy of live first.
 | `2026_09_27_000001` / `000002` | Adds the spatie/laravel-permission tables (`os_roles`, `os_permissions`, pivots) plus labels | Unaffected |
 | `2026_09_27_000003` | Copies user groups to roles (same ids), protected routes to permissions and `os_acl` to grants, so everyone keeps exactly the access they had; gives every user the role of their group | Unaffected |
 | `migrations-after-cutover/2026_09_27_000004` | Drops `os_menu`, `os_acl`, `os_acl_action`, `os_acl_controller` and `os_user_group`, after checking every group and user has their role and archiving the tables to `storage/app/migration-archive/*.sql` | **Breaks it**: kept outside `database/migrations`, so deploys never run it; run it by hand once Yii is retired (see `deploy/README.md`) |
+| `migrations-after-cutover/2026_09_27_000012` | Drops `os_visitor` (old page-view statistics; nothing writes it any more) after archiving it | **Breaks** Yii's Visitor page only; run after the cutover |
 
 The conversion was checked on a copy of the data: every user's access to
 every protected page (8 users x 224 routes) was the same before and after.
@@ -72,7 +73,7 @@ filters them. Bulk query updates are not logged. For that reason the "delete"
 actions (status 2) save through the model, and only derived values (header
 totals, draft linking, stock summary) are written in bulk. Entries are kept
 three years (`ACTIVITYLOG_CLEAN_AFTER_DAYS`); `activitylog:clean` runs daily.
-Sign-ins stay in the Audit Trail and page views in Visitor Statistics.
+Sign-ins stay in Login History; page views are in the Activity Log.
 
 ## Document numbers and stock
 
@@ -214,7 +215,7 @@ Where the Yii app was visibly broken, the port does what the code intended:
 - Logout is a POST (CSRF-protected) instead of a GET link. Likewise the
   actions that changed data from GET links or GET AJAX calls are POSTs:
   the access matrix switches, quantity/store/rate adjustments, "add from
-  PO/SR", "Make me issue", visitor truncate and the backup export, restore
+  PO/SR", "Make me issue" and the backup export, restore
   and cleanup.
 - The menu is no longer edited on screen (`os_menu`, the Menus page and the
   ACL Controller / Action pages are gone); it lives in `config/menu.php`
@@ -262,7 +263,7 @@ Where the Yii app was visibly broken, the port does what the code intended:
 | Login, logout, layout | Done |
 | Access control on spatie/laravel-permission, config menu | Done (drop migration waits for Yii's retirement) |
 | Master data: Country, State, City, District, Thana, Disease, Instruction, Patient Category / Sub Category / Grade / Type, Service, Department, Product Category, Product, Store, Unit, Batch, Vendor, Manufacturer | Done |
-| Access control: User, User Group (access matrix), User Status, Audit Trail, Visitor | Done |
+| Access control: User, User Group (access matrix), User Status, Login History | Done |
 | Patient, prescriptions, patient printouts | Done |
 | Invoice | Done |
 | Purchase Order / Receive (with documents, price comparison), Stock Requisition / Issue / Transfer | Done |

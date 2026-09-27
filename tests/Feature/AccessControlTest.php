@@ -6,7 +6,6 @@ use App\Models\AuditTrail;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserStatus;
-use App\Models\Visitor;
 use App\Rules\YiiEmail;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +14,7 @@ use Tests\TestCase;
 
 /**
  * Access Control section of the menu: users, groups (roles) and their
- * access matrix, user statuses, audit trail and visitor statistics.
+ * access matrix, user statuses and login history.
  */
 class AccessControlTest extends TestCase
 {
@@ -113,20 +112,6 @@ class AccessControlTest extends TestCase
         $this->assertSame('5 minutes', AuditTrail::interval('2026-09-01 10:00:00', '2026-09-01 10:05:00'));
     }
 
-    public function test_visitor_grid_prunes_old_rows_and_truncates(): void
-    {
-        Visitor::query()->insert([
-            ['user_id' => $this->admin->id, 'page_title' => 'Old page', 'server_time' => now()->subDays(8)],
-            ['user_id' => $this->admin->id, 'page_title' => 'Recent page', 'server_time' => now()->subDay()],
-        ]);
-
-        $this->get('/visitor/admin')->assertOk()->assertSee('Recent page')->assertDontSee('Old page');
-        $this->assertSame(1, Visitor::query()->count());
-
-        $this->post('/visitor/truncate')->assertRedirect('/visitor/admin')->assertSessionHas('success', 'TRUNCATE all visitors statistics data!');
-        $this->assertSame(0, Visitor::query()->count());
-    }
-
     public function test_user_create_hashes_password_and_validates_like_yii(): void
     {
         $group = $this->group(5, 'Front desk');
@@ -192,7 +177,7 @@ class AccessControlTest extends TestCase
 
     public function test_menu_items_of_access_control_all_resolve(): void
     {
-        foreach (['/userGroup/admin', '/userStatus/admin', '/user/admin', '/auditTrail/admin', '/visitor/admin', '/user/create', "/user/view/{$this->admin->id}"] as $url) {
+        foreach (['/userGroup/admin', '/userStatus/admin', '/user/admin', '/auditTrail/admin', '/user/create', "/user/view/{$this->admin->id}"] as $url) {
             $this->get($url)->assertOk();
         }
     }

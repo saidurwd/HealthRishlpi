@@ -10,6 +10,8 @@ What changed for the people using Health Program Software. Newest first.
   permission and account changes, database exports), Login History and
   System Health.
 - **About** page with the version and what's new.
+- Visitor Statistics is gone: the old app had stopped recording page views
+  long ago, and the Activity Log now keeps them.
 - Sign-in is rate limited against password guessing: five failed attempts a
   minute for a username from one address.
 - The menu is grouped into sections (Clinic, Pharmacy & Store, Reports,

@@ -141,7 +141,6 @@ return [
     ['text' => 'Activity Log', 'route' => 'activityLog.admin', 'icon' => 'fa fa-fw fa-list-check', 'can' => 'activityLog.admin'],
     ['text' => 'Security Events', 'route' => 'securityEvent.admin', 'icon' => 'fa fa-fw fa-shield-halved', 'can' => 'securityEvent.admin'],
     ['text' => 'Login History', 'route' => 'auditTrail.admin', 'icon' => 'fa fa-fw fa-right-to-bracket', 'can' => 'auditTrail.admin'],
-    ['text' => 'Visitor Statistics (old app)', 'route' => 'visitor.admin', 'icon' => 'fa fa-fw fa-chart-bar', 'can' => 'visitor.admin'],
 
     ['header' => 'HELP'],
     ['text' => 'About', 'route' => 'site.about', 'icon' => 'fa fa-fw fa-circle-info'],

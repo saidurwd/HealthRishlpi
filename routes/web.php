@@ -39,7 +39,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserGroupController;
 use App\Http\Controllers\UserStatusController;
 use App\Http\Controllers\VendorController;
-use App\Http\Controllers\VisitorController;
 use App\Support\LegacyRoute;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -255,10 +254,6 @@ Route::middleware(['auth', 'route.permission'])->group(function () {
 
     Route::get('auditTrail/admin', [AuditTrailController::class, 'admin'])->name('auditTrail.admin');
     Route::post('auditTrail/delete/{id}', [AuditTrailController::class, 'delete'])->name('auditTrail.delete')->whereNumber('id');
-
-    Route::get('visitor/admin', [VisitorController::class, 'admin'])->name('visitor.admin');
-    Route::post('visitor/delete/{id}', [VisitorController::class, 'delete'])->name('visitor.delete')->whereNumber('id');
-    Route::post('visitor/truncate', [VisitorController::class, 'truncate'])->name('visitor.truncate');
 
     // Catalog
     Route::crud('productCategory', ProductCategoryController::class);

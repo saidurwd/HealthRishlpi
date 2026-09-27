@@ -212,8 +212,9 @@ snapshot from `backups/` taken just before it (test the restore on a copy first)
    `php artisan health:reconcile` one last time and check it is clean.
 2. Take a backup: `php artisan db:snapshot $DEPLOY_PATH/backups` in `current/`.
 3. `php artisan migrate --force --path=database/migrations-after-cutover` drops
-   the old menu/ACL tables. It archives them to `storage/app/migration-archive/`
-   first and refuses if any group or user lacks their role.
+   the old menu/ACL tables and `os_visitor` (the old page-view statistics).
+   It archives them to `storage/app/migration-archive/` first and refuses if
+   any group or user lacks their role.
 4. Move the uploads folder from the Yii app to `shared/uploads`, remove
    `UPLOADS_PATH` from `deploy.env` and deploy once more.
 5. Remove the `health:reconcile` schedule from `routes/console.php` (Phase 4
